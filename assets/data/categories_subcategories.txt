@@ -1,0 +1,203 @@
+Appliances
+* Refrigerators
+* Freezers
+* Ranges & Stoves
+* Wall Ovens
+* Cooktops
+* Range Hoods
+* Dishwashers
+* Microwaves
+* Washers
+* Dryers
+* Small Appliances
+* Vacuums & Floor Care
+* Heating, Cooling & Air Quality
+* Appliance Parts & Accessories
+Bath
+* Bathtubs
+* Showers & Shower Doors
+* Toilets & Bidets
+* Bathroom Vanities
+* Bathroom Sinks
+* Bathroom Faucets
+* Bathroom Fans & Ventilation
+* Medicine Cabinets
+* Bathroom Mirrors
+* Bathroom Accessories & Hardware
+* Bath Safety
+* Bath Linens (Towels & Bath Mats)
+BBQs & Outdoor Cooking
+* Natural Gas BBQs
+* Propane BBQs
+* Charcoal & Pellet BBQs
+* Outdoor Cookware & Accessories
+Blinds & Window Coverings
+* Blinds & Shades
+* Curtains & Drapes
+* Curtain Rods & Hardware
+* Shutters
+* Window Film
+Building Materials
+* Lumber & Composites
+* Drywall
+* Concrete, Cement & Masonry
+* Insulation
+* Roofing & Gutters
+* Siding
+* Ceiling Tiles
+* Moulding & Millwork
+* Builder's Hardware & Fasteners
+Cleaning
+* Cleaning Supplies & Chemicals
+* Cleaning Tools
+* Trash & Recycling
+Decking, Fencing & Gates
+* Decking
+* Deck Railings
+* Fencing
+* Gates
+Décor & Furniture
+* Living Room Furniture
+* Bedroom Furniture
+* Home Office Furniture
+* Kitchen & Dining Furniture
+* Entry & Hallway Furniture
+* Mattresses
+* Home Décor (Wall Décor, Mirrors, etc.)
+* Seasonal Decorations (Holiday Décor)
+Doors & Windows
+* Interior Doors
+* Exterior Doors
+* Patio Doors
+* Garage Doors & Openers
+* Windows
+* Skylights
+Electrical
+* Wire & Cable
+* Electrical Boxes, Conduit & Fittings
+* Breakers, Panels & Fuses
+* Switches, Dimmers & Outlets
+* Wall Plates & Accessories
+* Extension Cords & Surge Protectors
+* EV Chargers & Accessories
+* Alternative Energy (Solar & Wind)
+Floors & Area Rugs
+* Hardwood Flooring
+* Laminate Flooring
+* Vinyl Flooring
+* Tile Flooring
+* Carpet & Carpet Tiles
+* Area Rugs & Mats
+* Flooring Adhesives & Accessories
+Hardware
+* Cabinet & Furniture Hardware
+* Door Locks & Handles
+* Fasteners (Nails, Screws & Anchors)
+* Mailboxes & Address Plaques
+* Safes
+* Signs & Numbers
+* Weatherstripping
+* Tarps, Straps & Tie-Downs
+Heating & Cooling
+* Heaters
+* Furnaces & Furnace Accessories
+* Thermostats & Controls
+* Ventilation & Ducting
+* Fireplaces & Stoves
+* Fireplace Mantels & Accessories
+* Chimney Caps & Supplies
+* Air Conditioners & Fans
+Kitchen
+* Kitchen Cabinets
+* Countertops & Backsplashes
+* Kitchen Sinks
+* Kitchen Faucets
+* Kitchen Islands & Carts
+* Cabinet Organizers & Storage
+Lawn & Garden Centre
+* Outdoor Plants & Flowers
+* Seeds & Bulbs
+* Planters & Pots
+* Lawn Care (Seed, Fertilizer & Sod)
+* Soil & Compost
+* Garden Tools & Equipment
+* Watering & Irrigation
+* Pest & Weed Control
+Lighting & Ceiling Fans
+* Ceiling Lights
+* Wall Lights & Sconces
+* Lamps & Shades
+* Outdoor Lighting
+* Ceiling Fans
+* Light Bulbs
+* Flashlights & Portable Lighting
+Outdoor Living & Patio
+* Patio Furniture
+* Outdoor Heating (Fire Pits & Patio Heaters)
+* Outdoor Umbrellas & Sun Shelters
+* Outdoor Décor
+* Swimming Pools & Supplies
+* Hot Tubs & Saunas
+* Playsets & Outdoor Recreation
+Outdoor Power Equipment
+* Lawn Mowers
+* String Trimmers & Edgers
+* Pressure Washers
+* Leaf Blowers & Vacuums
+* Chainsaws & Log Splitters
+* Tillers & Cultivators
+* Generators
+Paint
+* Interior Paint
+* Exterior Paint
+* Primers
+* Spray Paint
+* Wood Stains & Finishes
+* Caulking & Sealants
+* Painting Tools & Supplies
+Plumbing
+* Pipes & Fittings
+* Valves & Shut-Offs
+* Plumbing Repair Parts
+* Drain Cleaning Equipment
+* Water Heaters
+* Water Pumps & Tanks
+* Water Filtration & Softeners
+* Garbage Disposals
+* Toilet Parts & Repair
+Smart Home
+* Smart Lighting
+* Smart Switches & Plugs
+* Smart Thermostats
+* Smart Cameras & Security Systems
+* Smart Locks & Doorbells
+* Smart Speakers & Displays
+* Smart Smoke & CO Detectors
+Storage & Organization
+* Closet Organization
+* Garage Organization
+* Shelving
+* Storage Bins & Containers
+* Moving Boxes & Supplies
+* Laundry Organization
+Sheds & Outdoor Structures
+* Sheds
+* Garages & Carports
+* Greenhouses
+* Gazebos & Pergolas
+Snow & Ice Removal
+* Snow Blowers
+* Snow Shovels & Ice Scrapers
+* Ice Melt & Spreaders
+* Roof Rakes & De-icing Cables
+Tools
+* Power Tools
+* Hand Tools
+* Power Tool Accessories
+* Air Tools & Compressors
+* Tool Storage & Work Benches
+* Ladders & Scaffolding
+* Measuring & Layout Tools
+* Safety Equipment & PPE
+* Welding & Soldering Tools
+* Automotive Tools & Equipment

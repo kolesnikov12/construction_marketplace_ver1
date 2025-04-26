@@ -1,0 +1,36 @@
+name: construction_marketplace
+description: A marketplace app for construction materials.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.5
+  provider: ^6.0.5
+  http: ^1.1.0
+  shared_preferences: ^2.2.0
+  intl: ^0.19.0
+  image_picker: ^1.0.4
+  file_picker: ^10.1.2
+  path: ^1.8.3
+  flutter_typeahead: ^4.8.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.1
+  build_runner: ^2.4.15
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/data/
+    - assets/lang/
+    - assets/images/
