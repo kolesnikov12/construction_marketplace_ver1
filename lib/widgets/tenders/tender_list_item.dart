@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:construction_marketplace/models/tender.dart';
 import 'package:construction_marketplace/providers/category_provider.dart';
 import 'package:construction_marketplace/providers/tender_provider.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
+
+import '../../models/basic_models.dart';
 
 class TenderListItem extends StatelessWidget {
   final Tender tender;
@@ -28,7 +29,7 @@ class TenderListItem extends StatelessWidget {
     final isFavorite = tenderProvider.favoriteTenders.any((item) => item.id == tender.id);
 
     // Format currency
-    final formatter = NumberFormat.currency(symbol: '\, decimalDigits: 0);
+    final formatter = NumberFormat.currency(symbol: '\, decimalDigits: 0');
 
         // Format date
         final dateFormatter = DateFormat('MMM d, yyyy');

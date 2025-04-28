@@ -1,3 +1,4 @@
+import 'package:construction_marketplace/screens/tenders/listing_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -12,7 +13,6 @@ import 'package:construction_marketplace/screens/auth/register_screen.dart';
 import 'package:construction_marketplace/screens/tenders/tender_list_screen.dart';
 import 'package:construction_marketplace/screens/tenders/tender_detail_screen.dart';
 import 'package:construction_marketplace/screens/tenders/create_tender_screen.dart';
-import 'package:construction_marketplace/screens/listings/listing_list_screen.dart';
 import 'package:construction_marketplace/screens/listings/listing_detail_screen.dart';
 import 'package:construction_marketplace/screens/listings/create_listing_screen.dart';
 import 'package:construction_marketplace/screens/profile/profile_screen.dart';

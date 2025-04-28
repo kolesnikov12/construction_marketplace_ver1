@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:construction_marketplace/models/listing.dart';
 import 'package:construction_marketplace/providers/category_provider.dart';
 import 'package:construction_marketplace/providers/listing_provider.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
+
+import '../../models/basic_models.dart';
 
 class ListingGridItem extends StatelessWidget {
   final Listing listing;

@@ -16,7 +16,8 @@ class MyListingsScreen extends StatefulWidget {
   _MyListingsScreenState createState() => _MyListingsScreenState();
 }
 
-class _MyListingsScreenState extends State<MyListingsScreen> with SingleTickerProviderStateMixin {
+class _MyListingsScreenState extends State<MyListingsScreen>
+    with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   late TabController _tabController;
 
@@ -39,7 +40,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> with SingleTickerPr
     });
 
     try {
-      await Provider.of<ListingProvider>(context, listen: false).fetchUserListings();
+      await Provider.of<ListingProvider>(context, listen: false)
+          .fetchUserListings();
     } catch (error) {
       await showDialog(
         context: context,
@@ -68,7 +70,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> with SingleTickerPr
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.translate('mark_as_sold')),
-        content: Text(AppLocalizations.of(context)!.translate('mark_as_sold_confirm')),
+        content: Text(
+            AppLocalizations.of(context)!.translate('mark_as_sold_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -76,7 +79,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> with SingleTickerPr
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(AppLocalizations.of(context)!.translate('mark_as_sold')),
+            child:
+                Text(AppLocalizations.of(context)!.translate('mark_as_sold')),
           ),
         ],
       ),
@@ -84,11 +88,13 @@ class _MyListingsScreenState extends State<MyListingsScreen> with SingleTickerPr
 
     if (confirmed == true) {
       try {
-        await Provider.of<ListingProvider>(context, listen: false).markListingAsSold(listingId);
+        await Provider.of<ListingProvider>(context, listen: false)
+            .markListingAsSold(listingId);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.translate('listing_marked_as_sold')),
+            content: Text(AppLocalizations.of(context)!
+                .translate('listing_marked_as_sold')),
             duration: Duration(seconds: 2),
           ),
         );
@@ -108,7 +114,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> with SingleTickerPr
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.translate('delete_listing')),
-        content: Text(AppLocalizations.of(context)!.translate('delete_listing_confirm')),
+        content: Text(
+            AppLocalizations.of(context)!.translate('delete_listing_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -125,11 +132,13 @@ class _MyListingsScreenState extends State<MyListingsScreen> with SingleTickerPr
 
     if (confirmed == true) {
       try {
-        await Provider.of<ListingProvider>(context, listen: false).deleteListing(listingId);
+        await Provider.of<ListingProvider>(context, listen: false)
+            .deleteListing(listingId);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.translate('listing_deleted')),
+            content: Text(
+                AppLocalizations.of(context)!.translate('listing_deleted')),
             duration: Duration(seconds: 2),
           ),
         );
@@ -145,7 +154,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> with SingleTickerPr
   }
 
   Widget _buildListingGrid(List<Listing> listings, ListingStatus status) {
-    final filteredListings = listings.where((listing) => listing.status == status).toList();
+    final filteredListings =
+        listings.where((listing) => listing.status == status).toList();
 
     if (filteredListings.isEmpty) {
       return Center(
@@ -192,7 +202,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> with SingleTickerPr
                 if (listing.status == ListingStatus.available)
                   IconButton(
                     icon: Icon(Icons.check_circle_outline),
-                    tooltip: AppLocalizations.of(context)!.translate('mark_as_sold'),
+                    tooltip:
+                        AppLocalizations.of(context)!.translate('mark_as_sold'),
                     onPressed: () => _markListingAsSold(listing.id),
                   ),
                 IconButton(
@@ -216,34 +227,36 @@ class _MyListingsScreenState extends State<MyListingsScreen> with SingleTickerPr
 
     return Scaffold(
         appBar: AppBar(
-        title: Text(localization.translate('my_listings')),
-    bottom: TabBar(
-    controller: _tabController,
-    tabs: [
-    Tab(text: localization.translate('available')),
-    Tab(text: localization.translate('sold')),
-    Tab(text: localization.translate('expired')),
-    ],
-    ),
-    ),
-    drawer: AppDrawer(),
-    body: _isLoading
-    ? Center(child: CircularProgressIndicator())
-        : RefreshIndicator(
-    onRefresh: _loadUserListings,
-    child: TabBarView(
-    controller: _tabController,
-    children: [
-    _buildListingGrid(userListings, ListingStatus.available),
-    _buildListingGrid(userListings, ListingStatus.sold),
-    _buildListingGrid(userListings, ListingStatus.expired),
-    ],
-    ),
-    ),
-    floatingActionButton: FloatingActionButton(
-    onPressed: () {
-    Navigator.of(context).pushNamed(CreateListingScreen.routeName);
-    },
-    child: Icon(Icons.add),
-    tooltip: localization.translate('create_listing'),
-    ),
+          title: Text(localization.translate('my_listings')),
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: [
+              Tab(text: localization.translate('available')),
+              Tab(text: localization.translate('sold')),
+              Tab(text: localization.translate('expired')),
+            ],
+          ),
+        ),
+        drawer: AppDrawer(),
+        body: _isLoading
+            ? Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadUserListings,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildListingGrid(userListings, ListingStatus.available),
+                    _buildListingGrid(userListings, ListingStatus.sold),
+                    _buildListingGrid(userListings, ListingStatus.expired),
+                  ],
+                ),
+              ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.of(context).pushNamed(CreateListingScreen.routeName);
+          },
+          child: Icon(Icons.add),
+          tooltip: localization.translate('create_listing'),
+        ));
+  }
+}

@@ -11,6 +11,8 @@ import 'package:construction_marketplace/screens/auth/login_screen.dart';
 import 'package:construction_marketplace/screens/auth/register_screen.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 
+import '../screens/tenders/listing_list_screen.dart';
+
 class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

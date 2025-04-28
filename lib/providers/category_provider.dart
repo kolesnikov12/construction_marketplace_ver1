@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:construction_marketplace/models/category.dart';
+
+import '../models/basic_models.dart';
 
 class CategoryProvider with ChangeNotifier {
   List<Category> _categories = [];

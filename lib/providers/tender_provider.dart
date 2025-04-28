@@ -1,9 +1,6 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:construction_marketplace/models/tender.dart';
-import 'package:construction_marketplace/utils/constants.dart';
+import '../models/basic_models.dart';
 
 class TenderProvider with ChangeNotifier {
   List<Tender> _tenders = [];
@@ -45,22 +42,29 @@ class TenderProvider with ChangeNotifier {
 
       // Apply filters if provided
       if (searchQuery != null && searchQuery.isNotEmpty) {
-        _tenders = _tenders.where((tender) =>
-        tender.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
-            tender.description?.toLowerCase().contains(searchQuery.toLowerCase()) == true
-        ).toList();
+        _tenders = _tenders
+            .where((tender) =>
+                tender.title
+                    .toLowerCase()
+                    .contains(searchQuery.toLowerCase()) ||
+                tender.description
+                        ?.toLowerCase()
+                        .contains(searchQuery.toLowerCase()) ==
+                    true)
+            .toList();
       }
 
       if (city != null && city.isNotEmpty) {
-        _tenders = _tenders.where((tender) =>
-        tender.city.toLowerCase() == city.toLowerCase()
-        ).toList();
+        _tenders = _tenders
+            .where((tender) => tender.city.toLowerCase() == city.toLowerCase())
+            .toList();
       }
 
       if (categoryId != null && categoryId.isNotEmpty) {
-        _tenders = _tenders.where((tender) =>
-            tender.items.any((item) => item.categoryId == categoryId)
-        ).toList();
+        _tenders = _tenders
+            .where((tender) =>
+                tender.items.any((item) => item.categoryId == categoryId))
+            .toList();
       }
 
       notifyListeners();
@@ -80,7 +84,9 @@ class TenderProvider with ChangeNotifier {
       // In a real app, this would make an API call
       await Future.delayed(Duration(seconds: 1));
 
-      _userTenders = _generateMockTenders().where((tender) => tender.userId == _userId).toList();
+      _userTenders = _generateMockTenders()
+          .where((tender) => tender.userId == _userId)
+          .toList();
 
       notifyListeners();
     } catch (error) {
@@ -137,7 +143,9 @@ class TenderProvider with ChangeNotifier {
         status: TenderStatus.open,
         createdAt: DateTime.now(),
         items: items,
-        attachmentUrls: attachments?.map((file) => 'mock_url_${file.path.split('/').last}').toList(),
+        attachmentUrls: attachments
+            ?.map((file) => 'mock_url_${file.path.split('/').last}')
+            .toList(),
       );
 
       // Add the new tender to user tenders
@@ -249,20 +257,23 @@ class TenderProvider with ChangeNotifier {
     try {
       // For demo purposes, just update local data
       // In a real app, this would make an API call
-      final isFavorite = _favoriteTenders.any((tender) => tender.id == tenderId);
+      final isFavorite =
+          _favoriteTenders.any((tender) => tender.id == tenderId);
 
       if (isFavorite) {
         // Remove from favorites
         _favoriteTenders.removeWhere((tender) => tender.id == tenderId);
       } else {
         // Add to favorites
-        final tender = _tenders.firstWhere(
-              (tender) => tender.id == tenderId,
-          orElse: () async {
-            return await fetchTenderById(tenderId);
-          },
-        );
-        _favoriteTenders.add(tender);
+        try {
+          final listing =
+              _tenders.firstWhere((listing) => listing.id == tenderId);
+          _favoriteTenders.add(listing);
+        } catch (_) {
+          // Не знайдено в локальних списках, завантажуємо
+          final listing = await fetchTenderById(tenderId);
+          _favoriteTenders.add(listing);
+        }
       }
 
       notifyListeners();
@@ -318,7 +329,8 @@ class TenderProvider with ChangeNotifier {
           city: tender.city,
           budget: tender.budget,
           deliveryOption: tender.deliveryOption,
-          validUntil: tender.validUntil.add(Duration(days: additionalWeeks * 7)),
+          validUntil:
+              tender.validUntil.add(Duration(days: additionalWeeks * 7)),
           status: TenderStatus.extended,
           createdAt: tender.createdAt,
           items: tender.items,
@@ -334,7 +346,8 @@ class TenderProvider with ChangeNotifier {
         }
 
         // Update in favorite tenders if it exists there
-        final favTenderIndex = _favoriteTenders.indexWhere((t) => t.id == tenderId);
+        final favTenderIndex =
+            _favoriteTenders.indexWhere((t) => t.id == tenderId);
         if (favTenderIndex >= 0) {
           _favoriteTenders[favTenderIndex] = updatedTender;
         }
@@ -384,7 +397,8 @@ class TenderProvider with ChangeNotifier {
         }
 
         // Update in favorite tenders if it exists there
-        final favTenderIndex = _favoriteTenders.indexWhere((t) => t.id == tenderId);
+        final favTenderIndex =
+            _favoriteTenders.indexWhere((t) => t.id == tenderId);
         if (favTenderIndex >= 0) {
           _favoriteTenders[favTenderIndex] = updatedTender;
         }
@@ -404,7 +418,8 @@ class TenderProvider with ChangeNotifier {
         id: 'tender1',
         userId: 'user1',
         title: 'Need Quality Lumber for Home Renovation',
-        description: 'Looking for premium quality lumber for a complete home renovation project. Need various sizes and types.',
+        description:
+            'Looking for premium quality lumber for a complete home renovation project. Need various sizes and types.',
         city: 'Toronto, ON',
         budget: 2500.00,
         deliveryOption: DeliveryOption.pickup,
@@ -438,7 +453,8 @@ class TenderProvider with ChangeNotifier {
         id: 'tender2',
         userId: 'user2',
         title: 'Kitchen Renovation Materials Needed',
-        description: 'Complete kitchen renovation project. Looking for cabinets, countertops, and appliances.',
+        description:
+            'Complete kitchen renovation project. Looking for cabinets, countertops, and appliances.',
         city: 'Vancouver, BC',
         budget: 8000.00,
         deliveryOption: DeliveryOption.delivery,
@@ -482,7 +498,8 @@ class TenderProvider with ChangeNotifier {
         id: 'tender3',
         userId: 'user3',
         title: 'Bathroom Fixtures Needed',
-        description: 'Renovating two bathrooms in a residential property. Need various fixtures and materials.',
+        description:
+            'Renovating two bathrooms in a residential property. Need various fixtures and materials.',
         city: 'Montreal, QC',
         budget: 3500.00,
         deliveryOption: DeliveryOption.discuss,
@@ -526,7 +543,8 @@ class TenderProvider with ChangeNotifier {
         id: 'tender4',
         userId: _userId ?? 'user4',
         title: 'Flooring Materials for Office Building',
-        description: 'Need quality flooring materials for a 500 sq.m office space renovation.',
+        description:
+            'Need quality flooring materials for a 500 sq.m office space renovation.',
         city: 'Calgary, AB',
         budget: 7500.00,
         deliveryOption: DeliveryOption.delivery,
