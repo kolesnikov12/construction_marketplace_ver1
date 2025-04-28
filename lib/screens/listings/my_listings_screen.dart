@@ -215,35 +215,38 @@ class _MyListingsScreenState extends State<MyListingsScreen> with SingleTickerPr
     final userListings = listingProvider.userListings;
 
     return Scaffold(
-        appBar: AppBar(
+      appBar: AppBar(
         title: Text(localization.translate('my_listings')),
-    bottom: TabBar(
-    controller: _tabController,
-    tabs: [
-    Tab(text: localization.translate('available')),
-    Tab(text: localization.translate('sold')),
-    Tab(text: localization.translate('expired')),
-    ],
-    ),
-    ),
-    drawer: AppDrawer(),
-    body: _isLoading
-    ? Center(child: CircularProgressIndicator())
-        : RefreshIndicator(
-    onRefresh: _loadUserListings,
-    child: TabBarView(
-    controller: _tabController,
-    children: [
-    _buildListingGrid(userListings, ListingStatus.available),
-    _buildListingGrid(userListings, ListingStatus.sold),
-    _buildListingGrid(userListings, ListingStatus.expired),
-    ],
-    ),
-    ),
-    floatingActionButton: FloatingActionButton(
-    onPressed: () {
-    Navigator.of(context).pushNamed(CreateListingScreen.routeName);
-    },
-    child: Icon(Icons.add),
-    tooltip: localization.translate('create_listing'),
-    ),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: localization.translate('available')),
+            Tab(text: localization.translate('sold')),
+            Tab(text: localization.translate('expired')),
+          ],
+        ),
+      ),
+      drawer: AppDrawer(),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+        onRefresh: _loadUserListings,
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildListingGrid(userListings, ListingStatus.available),
+            _buildListingGrid(userListings, ListingStatus.sold),
+            _buildListingGrid(userListings, ListingStatus.expired),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.of(context).pushNamed(CreateListingScreen.routeName);
+        },
+        child: Icon(Icons.add),
+        tooltip: localization.translate('create_listing'),
+      ),
+    );
+  }
+}
