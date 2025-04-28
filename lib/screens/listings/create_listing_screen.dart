@@ -4,13 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:construction_marketplace/models/listing.dart';
-import 'package:construction_marketplace/models/tender.dart'; // For DeliveryOption enum
 import 'package:construction_marketplace/providers/listing_provider.dart';
 import 'package:construction_marketplace/providers/city_provider.dart';
-import 'package:construction_marketplace/widgets/app_drawer.dart';
-import 'package:construction_marketplace/widgets/listings/listing_item_form.dart';
+
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
+
+import '../../models/basic_models.dart';
 
 class CreateListingScreen extends StatefulWidget {
   static const routeName = '/create-listing';

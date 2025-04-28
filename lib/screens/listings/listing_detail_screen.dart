@@ -1,8 +1,9 @@
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
-import 'package:construction_marketplace/providers/tender_provider.dart';
+import 'package:construction_marketplace/providers/listing_provider.dart';
 import 'package:construction_marketplace/providers/category_provider.dart';
 import 'package:construction_marketplace/providers/auth_provider.dart';
 import 'package:construction_marketplace/widgets/app_drawer.dart';
@@ -10,35 +11,37 @@ import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 
 import '../../models/basic_models.dart';
 
-class TenderDetailScreen extends StatefulWidget {
-  static const routeName = '/tenders/detail';
+class ListingDetailScreen extends StatefulWidget {
+  static const routeName = '/listings/detail';
 
   @override
-  _TenderDetailScreenState createState() => _TenderDetailScreenState();
+  _ListingDetailScreenState createState() => _ListingDetailScreenState();
 }
 
-class _TenderDetailScreenState extends State<TenderDetailScreen> {
+class _ListingDetailScreenState extends State<ListingDetailScreen> {
   bool _isLoading = true;
-  Tender? _tender;
+  Listing? _listing;
+  int _currentImageIndex = 0;
+  final CarouselController _carouselController = CarouselController();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _loadTender();
+    _loadListing();
   }
 
-  Future<void> _loadTender() async {
+  Future<void> _loadListing() async {
     setState(() {
       _isLoading = true;
     });
 
-    final tenderId = ModalRoute.of(context)!.settings.arguments as String;
+    final listingId = ModalRoute.of(context)!.settings.arguments as String;
 
     try {
-      final tender = await Provider.of<TenderProvider>(context, listen: false).fetchTenderById(tenderId);
+      final listing = await Provider.of<ListingProvider>(context, listen: false).fetchListingById(listingId);
 
       setState(() {
-        _tender = tender;
+        _listing = listing;
         _isLoading = false;
       });
     } catch (error) {
@@ -61,10 +64,10 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
   }
 
   Future<void> _toggleFavorite() async {
-    if (_tender == null) return;
+    if (_listing == null) return;
 
     try {
-      await Provider.of<TenderProvider>(context, listen: false).toggleFavoriteTender(_tender!.id);
+      await Provider.of<ListingProvider>(context, listen: false).toggleFavoriteListing(_listing!.id);
 
       setState(() {}); // Refresh UI to update favorite icon
     } catch (error) {
@@ -77,15 +80,15 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
     }
   }
 
-  Future<void> _bidOnTender() async {
-    if (_tender == null) return;
+  Future<void> _contactSeller() async {
+    if (_listing == null) return;
 
     final user = Provider.of<AuthProvider>(context, listen: false).user;
 
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.translate('login_to_bid')),
+          content: Text(AppLocalizations.of(context)!.translate('login_to_contact')),
           action: SnackBarAction(
             label: AppLocalizations.of(context)!.translate('login'),
             onPressed: () {
@@ -97,94 +100,76 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
       return;
     }
 
-    // In a real app, this would open a bid form
-    // For demo, show a dialog with a simple success message
+    // In a real app, this would initiate a chat or show contact info
+    // For demo, show a dialog with mock contact info
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.translate('bid_on_tender')),
+        title: Text(AppLocalizations.of(context)!.translate('contact_seller')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(AppLocalizations.of(context)!.translate('bid_on_tender_confirm')),
-            SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.translate('bid_amount'),
-                border: OutlineInputBorder(),
-                prefixText: '\$ ',
-              ),
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.translate('bid_message'),
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
-              ),
-              maxLines: 3,
-            ),
+            Text('${AppLocalizations.of(context)!.translate('email')}: seller@example.com'),
+            SizedBox(height: 8),
+            Text('${AppLocalizations.of(context)!.translate('phone')}: +1 123-456-7890'),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(AppLocalizations.of(context)!.translate('cancel')),
+            child: Text(AppLocalizations.of(context)!.translate('close')),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(AppLocalizations.of(context)!.translate('bid_submitted')),
-                  backgroundColor: Colors.green,
-                ),
+              // Launch email
+              final Uri emailLaunchUri = Uri(
+                scheme: 'mailto',
+                path: 'seller@example.com',
+                query: encodeQueryParameters({
+                  'subject': 'Inquiry about "${_listing!.title}"',
+                }),
               );
+              await launchUrl(emailLaunchUri);
             },
-            child: Text(AppLocalizations.of(context)!.translate('submit_bid')),
+            child: Text(AppLocalizations.of(context)!.translate('send_email')),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              // Launch phone call
+              final Uri callLaunchUri = Uri(
+                scheme: 'tel',
+                path: '+11234567890',
+              );
+              await launchUrl(callLaunchUri);
+            },
+            child: Text(AppLocalizations.of(context)!.translate('call')),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _openAttachment(String url) async {
-    // In a real app, this would download or open the attachment
-    // For demo, just show a dialog
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.translate('open_attachment')),
-        content: Text(AppLocalizations.of(context)!.translate('attachment_mock_message')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(AppLocalizations.of(context)!.translate('ok')),
-          ),
-        ],
-      ),
-    );
+  String? encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
   }
 
   @override
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
-    final tenderProvider = Provider.of<TenderProvider>(context);
+    final listingProvider = Provider.of<ListingProvider>(context);
     final categoryProvider = Provider.of<CategoryProvider>(context);
-    final authProvider = Provider.of<AuthProvider>(context);
 
-    // Check if tender is a favorite
-    final isFavorite = _tender != null &&
-        tenderProvider.favoriteTenders.any((item) => item?.id == _tender!.id);
-
-    // Check if user is the tender creator
-    final isCreator = _tender != null && authProvider.user != null &&
-        _tender!.userId == authProvider.user!.id;
+    // Check if listing is a favorite
+    final isFavorite = _listing != null &&
+        listingProvider.favoriteListings.any((item) => item.id == _listing!.id);
 
     // Format currency
-    final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 0);
+    final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 
     // Format date
     final dateFormatter = DateFormat('MMMM d, yyyy');
@@ -192,7 +177,7 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text(localization.translate('tender_details')),
+          title: Text(localization.translate('listing_details')),
         ),
         body: Center(
           child: CircularProgressIndicator(),
@@ -200,49 +185,44 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
       );
     }
 
-    if (_tender == null) {
+    if (_listing == null) {
       return Scaffold(
         appBar: AppBar(
-          title: Text(localization.translate('tender_details')),
+          title: Text(localization.translate('listing_details')),
         ),
         body: Center(
-          child: Text(localization.translate('tender_not_found')),
+          child: Text(localization.translate('listing_not_found')),
         ),
       );
     }
 
-    // Determine tender status message and color
+    // Determine listing status message and color
     String statusMessage;
     Color statusColor;
 
-    switch (_tender!.status) {
-      case TenderStatus.open:
-        if (_tender!.validUntil.isAfter(DateTime.now())) {
-          statusMessage = localization.translate('open');
+    switch (_listing!.status) {
+      case ListingStatus.available:
+        if (_listing!.validUntil.isAfter(DateTime.now())) {
+          statusMessage = localization.translate('available');
           statusColor = Colors.green;
         } else {
           statusMessage = localization.translate('expired');
           statusColor = Colors.orange;
         }
         break;
-      case TenderStatus.extended:
-        if (_tender!.validUntil.isAfter(DateTime.now())) {
-          statusMessage = localization.translate('extended');
-          statusColor = Colors.blue;
-        } else {
-          statusMessage = localization.translate('expired');
-          statusColor = Colors.orange;
-        }
+      case ListingStatus.sold:
+        statusMessage = localization.translate('sold');
+        statusColor = Colors.blue;
         break;
-      case TenderStatus.closed:
-        statusMessage = localization.translate('closed');
-        statusColor = Colors.grey;
+      case ListingStatus.expired:
+        statusMessage = localization.translate('expired');
+        statusColor = Colors.orange;
         break;
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localization.translate('tender_details')),
+        title: Text(localization.translate('listing_details')),
         actions: [
           IconButton(
             icon: Icon(
@@ -261,7 +241,113 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status Banner
+            // Image Carousel
+            if (_listing!.photoUrls != null && _listing!.photoUrls!.isNotEmpty)
+              Stack(
+                children: [
+                  // Carousel
+                  CarouselSlider(
+                    carouselController: _carouselController,
+                    options: CarouselOptions(
+                      height: 250,
+                      viewportFraction: 1.0,
+                      enlargeCenterPage: false,
+                      onPageChanged: (index, reason) {
+                        setState(() {
+                          _currentImageIndex = index;
+                        });
+                      },
+                    ),
+                    items: _listing!.photoUrls!.map((url) {
+                      return Builder(
+                        builder: (BuildContext context) {
+                          return Container(
+                            width: MediaQuery.of(context).size.width,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                            ),
+                            child: Image.network(
+                              url,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Center(
+                                  child: Icon(Icons.broken_image, size: 64),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      );
+                    }).toList(),
+                  ),
+
+                  // Navigation arrows
+                  Positioned(
+                    left: 10,
+                    top: 0,
+                    bottom: 0,
+                    child: GestureDetector(
+                      onTap: () {
+                        _carouselController.previousPage();
+                      },
+                      child: Container(
+                        color: Colors.transparent,
+                        padding: EdgeInsets.all(8),
+                        child: Icon(Icons.arrow_back_ios, color: Colors.white70),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 10,
+                    top: 0,
+                    bottom: 0,
+                    child: GestureDetector(
+                      onTap: () {
+                        _carouselController.nextPage();
+                      },
+                      child: Container(
+                        color: Colors.transparent,
+                        padding: EdgeInsets.all(8),
+                        child: Icon(Icons.arrow_forward_ios, color: Colors.white70),
+                      ),
+                    ),
+                  ),
+
+                  // Indicator dots
+                  if (_listing!.photoUrls!.length > 1)
+                    Positioned(
+                      bottom: 10,
+                      left: 0,
+                      right: 0,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: _listing!.photoUrls!.asMap().entries.map((entry) {
+                          return Container(
+                            width: 8.0,
+                            height: 8.0,
+                            margin: EdgeInsets.symmetric(horizontal: 4.0),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _currentImageIndex == entry.key
+                                  ? Colors.white
+                                  : Colors.white.withOpacity(0.5),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                ],
+              )
+            else
+              Container(
+                height: 200,
+                color: Colors.grey[300],
+                child: Center(
+                  child: Icon(Icons.image_not_supported, size: 64, color: Colors.grey),
+                ),
+              ),
+
+            // Status Badge
             Container(
               padding: EdgeInsets.symmetric(vertical: 8),
               color: statusColor.withOpacity(0.1),
@@ -269,9 +355,11 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    _tender!.status == TenderStatus.open || _tender!.status == TenderStatus.extended
+                    _listing!.status == ListingStatus.available
                         ? Icons.check_circle
-                        : Icons.cancel,
+                        : (_listing!.status == ListingStatus.sold
+                        ? Icons.shopping_cart
+                        : Icons.access_time),
                     color: statusColor,
                     size: 16,
                   ),
@@ -283,9 +371,9 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (_tender!.status != TenderStatus.closed) ...[
+                  if (_listing!.status == ListingStatus.available) ...[
                     Text(
-                      ' • ${localization.translate('valid_until')} ${dateFormatter.format(_tender!.validUntil)}',
+                      ' • ${localization.translate('valid_until')} ${dateFormatter.format(_listing!.validUntil)}',
                       style: TextStyle(
                         color: statusColor,
                       ),
@@ -295,7 +383,7 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
               ),
             ),
 
-            // Title & Budget
+            // Title & Details
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -303,7 +391,7 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
                 children: [
                   // Title
                   Text(
-                    _tender!.title,
+                    _listing!.title,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -311,80 +399,43 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
 
                   SizedBox(height: 8),
 
-                  // Budget
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.attach_money, color: Colors.blue[800], size: 20),
-                        SizedBox(width: 4),
-                        Text(
-                          '${localization.translate('budget')}: ${formatter.format(_tender!.budget)}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue[800],
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: 16),
-
-                  // Location & Delivery
+                  // Location
                   Row(
                     children: [
-                      // Location
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Icon(Icons.location_on, size: 16, color: Colors.grey),
-                            SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                _tender!.city,
-                                style: TextStyle(
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ),
-                          ],
+                      Icon(Icons.location_on, size: 16, color: Colors.grey),
+                      SizedBox(width: 4),
+                      Text(
+                        _listing!.city,
+                        style: TextStyle(
+                          color: Colors.grey[700],
                         ),
                       ),
+                    ],
+                  ),
 
-                      // Delivery
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Icon(
-                              _tender!.deliveryOption == DeliveryOption.pickup
-                                  ? Icons.store
-                                  : (_tender!.deliveryOption == DeliveryOption.delivery
-                                  ? Icons.local_shipping
-                                  : Icons.question_answer),
-                              size: 16,
-                              color: Colors.grey,
-                            ),
-                            SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                _tender!.deliveryOption == DeliveryOption.pickup
-                                    ? localization.translate('pickup_only')
-                                    : (_tender!.deliveryOption == DeliveryOption.delivery
-                                    ? localization.translate('delivery_required')
-                                    : localization.translate('requires_discussion')),
-                                style: TextStyle(
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ),
-                          ],
+                  SizedBox(height: 4),
+
+                  // Delivery
+                  Row(
+                    children: [
+                      Icon(
+                        _listing!.deliveryOption == DeliveryOption.pickup
+                            ? Icons.store
+                            : (_listing!.deliveryOption == DeliveryOption.delivery
+                            ? Icons.local_shipping
+                            : Icons.question_answer),
+                        size: 16,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        _listing!.deliveryOption == DeliveryOption.pickup
+                            ? localization.translate('pickup_only')
+                            : (_listing!.deliveryOption == DeliveryOption.delivery
+                            ? localization.translate('can_ship')
+                            : localization.translate('requires_discussion')),
+                        style: TextStyle(
+                          color: Colors.grey[700],
                         ),
                       ),
                     ],
@@ -393,7 +444,7 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
                   SizedBox(height: 16),
 
                   // Description (if available)
-                  if (_tender!.description != null && _tender!.description!.isNotEmpty) ...[
+                  if (_listing!.description != null && _listing!.description!.isNotEmpty) ...[
                     Text(
                       localization.translate('description'),
                       style: TextStyle(
@@ -403,69 +454,11 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      _tender!.description!,
+                      _listing!.description!,
                       style: TextStyle(
                         fontSize: 16,
                       ),
                     ),
-                    SizedBox(height: 24),
-                  ],
-
-                  // Attachments (if available)
-                  if (_tender!.attachmentUrls != null && _tender!.attachmentUrls!.isNotEmpty) ...[
-                    Text(
-                      localization.translate('attachments'),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-
-                    // Attachments List
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: _tender!.attachmentUrls!.length,
-                      itemBuilder: (ctx, index) {
-                        final url = _tender!.attachmentUrls![index];
-                        final fileName = url.split('/').last;
-                        final extension = fileName.split('.').last.toLowerCase();
-
-                        IconData icon;
-                        switch (extension) {
-                          case 'pdf':
-                            icon = Icons.picture_as_pdf;
-                            break;
-                          case 'doc':
-                          case 'docx':
-                            icon = Icons.description;
-                            break;
-                          case 'xls':
-                          case 'xlsx':
-                            icon = Icons.table_chart;
-                            break;
-                          case 'zip':
-                          case 'rar':
-                            icon = Icons.archive;
-                            break;
-                          case 'jpg':
-                          case 'jpeg':
-                          case 'png':
-                            icon = Icons.image;
-                            break;
-                          default:
-                            icon = Icons.insert_drive_file;
-                        }
-
-                        return ListTile(
-                          leading: Icon(icon),
-                          title: Text(fileName),
-                          onTap: () => _openAttachment(url),
-                        );
-                      },
-                    ),
-
                     SizedBox(height: 24),
                   ],
 
@@ -483,9 +476,9 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
                   ListView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
-                    itemCount: _tender!.items.length,
+                    itemCount: _listing!.items.length,
                     itemBuilder: (ctx, index) {
-                      final item = _tender!.items[index];
+                      final item = _listing!.items[index];
                       final categoryName = categoryProvider.getCategoryName(
                         item.categoryId,
                         localization.isEnglish(),
@@ -509,6 +502,20 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
                               Text(
                                 item.itemName,
                                 style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+
+                              SizedBox(height: 8),
+
+                              // Price
+                              Text(
+                                item.isFree
+                                    ? localization.translate('free')
+                                    : formatter.format(item.price),
+                                style: TextStyle(
+                                  color: item.isFree ? Colors.green : Colors.blue[800],
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),
@@ -579,15 +586,13 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: !isCreator && _tender!.status != TenderStatus.closed
+      bottomNavigationBar: _listing!.status == ListingStatus.available
           ? BottomAppBar(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: ElevatedButton(
-            onPressed: _tender!.validUntil.isAfter(DateTime.now())
-                ? _bidOnTender
-                : null,
-            child: Text(localization.translate('bid_on_tender')),
+            onPressed: _contactSeller,
+            child: Text(localization.translate('contact_seller')),
             style: ElevatedButton.styleFrom(
               padding: EdgeInsets.symmetric(vertical: 12),
             ),
@@ -596,5 +601,3 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
       )
           : null,
     );
-  }
-}

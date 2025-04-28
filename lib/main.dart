@@ -18,7 +18,6 @@ import 'package:construction_marketplace/screens/listings/create_listing_screen.
 import 'package:construction_marketplace/screens/profile/profile_screen.dart';
 import 'package:construction_marketplace/screens/favorites/favorites_screen.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
-import 'package:construction_marketplace/utils/constants.dart';
 import 'package:construction_marketplace/utils/app_theme.dart';
 
 void main() {

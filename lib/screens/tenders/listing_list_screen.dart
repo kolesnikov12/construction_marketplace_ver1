@@ -1,66 +1,68 @@
-// lib/screens/tenders/tender_list_screen.dart
+// lib/screens/listings/listing_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:construction_marketplace/providers/tender_provider.dart';
+import 'package:construction_marketplace/providers/listing_provider.dart';
 import 'package:construction_marketplace/providers/category_provider.dart';
-
-import 'package:construction_marketplace/screens/tenders/tender_detail_screen.dart';
-import 'package:construction_marketplace/widgets/tenders/tender_list_item.dart';
-import 'package:construction_marketplace/widgets/tenders/filter_dialog.dart';
+import 'package:construction_marketplace/providers/city_provider.dart';
+import 'package:construction_marketplace/screens/listings/listing_detail_screen.dart';
+import 'package:construction_marketplace/widgets/listings/listing_grid_item.dart';
+import 'package:construction_marketplace/widgets/listings/listing_filter_dialog.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 
-class TenderListScreen extends StatefulWidget {
-  static const routeName = '/tenders';
+class ListingListScreen extends StatefulWidget {
+  static const routeName = '/listings';
   final String searchQuery;
 
-  const TenderListScreen({
+  const ListingListScreen({
     Key? key,
     this.searchQuery = '',
   }) : super(key: key);
 
   @override
-  _TenderListScreenState createState() => _TenderListScreenState();
+  _ListingListScreenState createState() => _ListingListScreenState();
 }
 
-class _TenderListScreenState extends State<TenderListScreen> {
+class _ListingListScreenState extends State<ListingListScreen> {
   String? _selectedCity;
   String? _selectedCategoryId;
-  bool _showUserBids = false;
   bool _showUnviewed = false;
+  List<String> _selectedDeliveryOptions = [];
 
   @override
   void initState() {
     super.initState();
-    _loadTenders();
+    _loadListings();
   }
 
   @override
-  void didUpdateWidget(TenderListScreen oldWidget) {
+  void didUpdateWidget(ListingListScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.searchQuery != oldWidget.searchQuery) {
-      _loadTenders();
+      _loadListings();
     }
   }
 
-  Future<void> _loadTenders() async {
-    await Provider.of<TenderProvider>(context, listen: false).fetchTenders(
+  Future<void> _loadListings() async {
+    await Provider.of<ListingProvider>(context, listen: false).fetchListings(
       searchQuery: widget.searchQuery,
       city: _selectedCity,
       categoryId: _selectedCategoryId,
-      userBids: _showUserBids,
       unviewed: _showUnviewed,
+      deliveryOptions: _selectedDeliveryOptions.isNotEmpty
+          ? _selectedDeliveryOptions
+          : null,
     );
   }
 
   void _openFilterDialog() async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (ctx) => FilterDialog(
+      builder: (ctx) => ListingFilterDialog(
         initialCity: _selectedCity,
         initialCategoryId: _selectedCategoryId,
-        showUserBids: _showUserBids,
         showUnviewed: _showUnviewed,
+        selectedDeliveryOptions: _selectedDeliveryOptions,
       ),
     );
 
@@ -68,11 +70,11 @@ class _TenderListScreenState extends State<TenderListScreen> {
       setState(() {
         _selectedCity = result['city'];
         _selectedCategoryId = result['categoryId'];
-        _showUserBids = result['showUserBids'];
         _showUnviewed = result['showUnviewed'];
+        _selectedDeliveryOptions = result['deliveryOptions'];
       });
 
-      _loadTenders();
+      _loadListings();
     }
   }
 
@@ -80,29 +82,29 @@ class _TenderListScreenState extends State<TenderListScreen> {
     setState(() {
       _selectedCity = null;
       _selectedCategoryId = null;
-      _showUserBids = false;
       _showUnviewed = false;
+      _selectedDeliveryOptions = [];
     });
 
-    _loadTenders();
+    _loadListings();
   }
 
   bool get _hasActiveFilters {
     return _selectedCity != null ||
         _selectedCategoryId != null ||
-        _showUserBids ||
-        _showUnviewed;
+        _showUnviewed ||
+        _selectedDeliveryOptions.isNotEmpty;
   }
 
   @override
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
-    final tenderProvider = Provider.of<TenderProvider>(context);
-    final tenders = tenderProvider.tenders;
+    final listingProvider = Provider.of<ListingProvider>(context);
+    final listings = listingProvider.listings;
 
     return Scaffold(
       appBar: widget.searchQuery.isEmpty ? AppBar(
-        title: Text(localization.translate('tenders')),
+        title: Text(localization.translate('listings')),
       ) : null,
       body: Column(
         children: [
@@ -126,7 +128,7 @@ class _TenderListScreenState extends State<TenderListScreen> {
                                   setState(() {
                                     _selectedCity = null;
                                   });
-                                  _loadTenders();
+                                  _loadListings();
                                 },
                               ),
                             ),
@@ -146,22 +148,9 @@ class _TenderListScreenState extends State<TenderListScreen> {
                                       setState(() {
                                         _selectedCategoryId = null;
                                       });
-                                      _loadTenders();
+                                      _loadListings();
                                     },
                                   );
-                                },
-                              ),
-                            ),
-                          if (_showUserBids)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: Chip(
-                                label: Text(localization.translate('tenders_with_my_bids')),
-                                onDeleted: () {
-                                  setState(() {
-                                    _showUserBids = false;
-                                  });
-                                  _loadTenders();
                                 },
                               ),
                             ),
@@ -169,15 +158,44 @@ class _TenderListScreenState extends State<TenderListScreen> {
                             Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: Chip(
-                                label: Text(localization.translate('unviewed_tenders')),
+                                label: Text(localization.translate('unviewed_listings')),
                                 onDeleted: () {
                                   setState(() {
                                     _showUnviewed = false;
                                   });
-                                  _loadTenders();
+                                  _loadListings();
                                 },
                               ),
                             ),
+                          ..._selectedDeliveryOptions.map((option) {
+                            String label;
+                            switch (option) {
+                              case 'pickup':
+                                label = localization.translate('pickup_only');
+                                break;
+                              case 'delivery':
+                                label = localization.translate('can_ship');
+                                break;
+                              case 'discuss':
+                                label = localization.translate('requires_discussion');
+                                break;
+                              default:
+                                label = option;
+                            }
+
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Chip(
+                                label: Text(label),
+                                onDeleted: () {
+                                  setState(() {
+                                    _selectedDeliveryOptions.remove(option);
+                                  });
+                                  _loadListings();
+                                },
+                              ),
+                            );
+                          }).toList(),
                         ],
                       ),
                     ),
@@ -193,8 +211,8 @@ class _TenderListScreenState extends State<TenderListScreen> {
 
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _loadTenders,
-              child: tenders.isEmpty
+              onRefresh: _loadListings,
+              child: listings.isEmpty
                   ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -202,7 +220,7 @@ class _TenderListScreenState extends State<TenderListScreen> {
                     Icon(Icons.search_off, size: 64, color: Colors.grey),
                     SizedBox(height: 16),
                     Text(
-                      localization.translate('no_tenders_found'),
+                      localization.translate('no_listings_found'),
                       style: TextStyle(fontSize: 18),
                     ),
                     if (_hasActiveFilters) ...[
@@ -215,16 +233,23 @@ class _TenderListScreenState extends State<TenderListScreen> {
                   ],
                 ),
               )
-                  : ListView.builder(
-                itemCount: tenders.length,
+                  : GridView.builder(
+                padding: const EdgeInsets.all(8.0),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+                  childAspectRatio: 0.75,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemCount: listings.length,
                 itemBuilder: (ctx, index) {
-                  final tender = tenders[index];
-                  return TenderListItem(
-                    tender: tender,
+                  final listing = listings[index];
+                  return ListingGridItem(
+                    listing: listing,
                     onTap: () {
                       Navigator.of(context).pushNamed(
-                        TenderDetailScreen.routeName,
-                        arguments: tender.id,
+                        ListingDetailScreen.routeName,
+                        arguments: listing.id,
                       );
                     },
                   );
@@ -241,5 +266,4 @@ class _TenderListScreenState extends State<TenderListScreen> {
       ),
     );
   }
-}
-
+}ScreenState createState() => _TenderList();
