@@ -6,13 +6,25 @@ class User {
   final String email;
   final String phone;
   final String? profileImageUrl;
+  final String? fcmToken; // Для push-повідомлень
+  final DateTime createdAt;
+  final DateTime lastLoginAt;
+  final Map<String, dynamic>? preferences; // Налаштування користувача
+  final List<String>? savedAddressIds; // Збережені адреси
+  final bool isEmailVerified;
 
-  User({
+  User( {
     required this.id,
     required this.name,
     required this.email,
     required this.phone,
     this.profileImageUrl,
+    this.fcmToken,
+    required this.createdAt,
+    required this.lastLoginAt,
+    this.preferences,
+    this.savedAddressIds,
+    required this.isEmailVerified,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -22,6 +34,12 @@ class User {
       email: json['email'],
       phone: json['phone'],
       profileImageUrl: json['profileImageUrl'],
+      fcmToken: json['fcmToken'],
+      createdAt: json['createdAt'],
+      lastLoginAt: json['lastLoginAt'],
+      preferences: json['preferences'],
+      savedAddressIds: json['savedAddressIds'],
+      isEmailVerified: json['isEmailVerified']
     );
   }
 
@@ -32,6 +50,12 @@ class User {
       'email': email,
       'phone': phone,
       'profileImageUrl': profileImageUrl,
+      'fcmToken': fcmToken,
+      'createdAt': createdAt,
+      'lastLoginAt': lastLoginAt,
+      'preferences': preferences,
+      'savedAddressIds': savedAddressIds,
+      'isEmailVerified': isEmailVerified
     };
   }
 }

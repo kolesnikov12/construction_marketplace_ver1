@@ -7,8 +7,7 @@ import 'package:construction_marketplace/providers/category_provider.dart';
 import 'package:construction_marketplace/providers/auth_provider.dart';
 import 'package:construction_marketplace/widgets/app_drawer.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
-
-import '../../models/basic_models.dart';
+import 'package:construction_marketplace/models/basic_models.dart';
 
 class TenderDetailScreen extends StatefulWidget {
   static const routeName = '/tenders/detail';
@@ -176,8 +175,8 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     // Check if tender is a favorite
-    final isFavorite = _tender != null &&
-        tenderProvider.favoriteTenders.any((item) => item?.id == _tender!.id);
+    final isFavorite =
+        tenderProvider.favoriteTenders.any((item) => item.id == _tender!.id);
 
     // Check if user is the tender creator
     final isCreator = _tender != null && authProvider.user != null &&

@@ -4,6 +4,8 @@ import 'package:construction_marketplace/providers/auth_provider.dart';
 import 'package:construction_marketplace/screens/auth/register_screen.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 
+import '../../utils/validators.dart';
+
 class LoginScreen extends StatefulWidget {
   static const routeName = '/login';
 
@@ -16,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;  // Для показу/приховування пароля
 
   @override
   void dispose() {
@@ -85,14 +88,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: InputDecoration(
                       labelText: localization.translate('email'),
                       border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.email),
+                      hintText: 'example@email.com',
                     ),
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return localization.translate('field_required');
-                      }
-                      return null;
-                    },
+                    textInputAction: TextInputAction.next,
+                    validator: (value) => Validators.validateEmail(value),
+                    autocorrect: false,
+                    enableSuggestions: false,
                   ),
                   SizedBox(height: 16),
                   TextFormField(
@@ -100,20 +103,51 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: InputDecoration(
                       labelText: localization.translate('password'),
                       border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                     ),
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return localization.translate('field_required');
                       }
                       return null;
                     },
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _submit(),
+                  ),
+                  SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        // Навігація до екрану відновлення пароля
+                        // Navigator.of(context).pushNamed(ForgotPasswordScreen.routeName);
+                      },
+                      child: Text(localization.translate('forgot_password')),
+                    ),
                   ),
                   SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _submit,
                     child: _isLoading
-                        ? CircularProgressIndicator(color: Colors.white)
+                        ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
                         : Text(localization.translate('login')),
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 12),

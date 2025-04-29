@@ -1,10 +1,8 @@
-// lib/screens/listings/listing_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:construction_marketplace/providers/listing_provider.dart';
 import 'package:construction_marketplace/providers/category_provider.dart';
-import 'package:construction_marketplace/providers/city_provider.dart';
 import 'package:construction_marketplace/screens/listings/listing_detail_screen.dart';
 import 'package:construction_marketplace/widgets/listings/listing_grid_item.dart';
 import 'package:construction_marketplace/widgets/listings/listing_filter_dialog.dart';
@@ -266,4 +264,4 @@ class _ListingListScreenState extends State<ListingListScreen> {
       ),
     );
   }
-}ScreenState createState() => _TenderList();
+}

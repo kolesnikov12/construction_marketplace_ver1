@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:construction_marketplace/models/tender.dart'; // For DeliveryOption enum
 import 'package:construction_marketplace/providers/category_provider.dart';
 import 'package:construction_marketplace/providers/city_provider.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
+
+import '../../models/basic_models.dart';
 
 class ListingFilterDialog extends StatefulWidget {
   final String? initialCity;

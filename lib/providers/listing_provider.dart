@@ -1,10 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:construction_marketplace/models/listing.dart';
-import 'package:construction_marketplace/models/tender.dart'; // For DeliveryOption enum
-import 'package:construction_marketplace/utils/constants.dart';
+
+import '../models/basic_models.dart';
 
 class ListingProvider with ChangeNotifier {
   List<Listing> _listings = [];
@@ -46,28 +43,37 @@ class ListingProvider with ChangeNotifier {
 
       // Apply filters if provided
       if (searchQuery != null && searchQuery.isNotEmpty) {
-        _listings = _listings.where((listing) =>
-        listing.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
-            listing.description?.toLowerCase().contains(searchQuery.toLowerCase()) == true
-        ).toList();
+        _listings = _listings
+            .where((listing) =>
+                listing.title
+                    .toLowerCase()
+                    .contains(searchQuery.toLowerCase()) ||
+                listing.description
+                        ?.toLowerCase()
+                        .contains(searchQuery.toLowerCase()) ==
+                    true)
+            .toList();
       }
 
       if (city != null && city.isNotEmpty) {
-        _listings = _listings.where((listing) =>
-        listing.city.toLowerCase() == city.toLowerCase()
-        ).toList();
+        _listings = _listings
+            .where(
+                (listing) => listing.city.toLowerCase() == city.toLowerCase())
+            .toList();
       }
 
       if (categoryId != null && categoryId.isNotEmpty) {
-        _listings = _listings.where((listing) =>
-            listing.items.any((item) => item.categoryId == categoryId)
-        ).toList();
+        _listings = _listings
+            .where((listing) =>
+                listing.items.any((item) => item.categoryId == categoryId))
+            .toList();
       }
 
       if (deliveryOptions != null && deliveryOptions.isNotEmpty) {
-        _listings = _listings.where((listing) =>
-            deliveryOptions.contains(listing.deliveryOption.name)
-        ).toList();
+        _listings = _listings
+            .where((listing) =>
+                deliveryOptions.contains(listing.deliveryOption.name))
+            .toList();
       }
 
       notifyListeners();
@@ -87,7 +93,9 @@ class ListingProvider with ChangeNotifier {
       // In a real app, this would make an API call
       await Future.delayed(Duration(seconds: 1));
 
-      _userListings = _generateMockListings().where((listing) => listing.userId == _userId).toList();
+      _userListings = _generateMockListings()
+          .where((listing) => listing.userId == _userId)
+          .toList();
 
       notifyListeners();
     } catch (error) {
@@ -142,7 +150,9 @@ class ListingProvider with ChangeNotifier {
         status: ListingStatus.available,
         createdAt: DateTime.now(),
         items: items,
-        photoUrls: photos.map((file) => 'mock_url_${file.path.split('/').last}').toList(),
+        photoUrls: photos
+            .map((file) => 'mock_url_${file.path.split('/').last}')
+            .toList(),
       );
 
       // Add the new listing to user listings
@@ -253,20 +263,22 @@ class ListingProvider with ChangeNotifier {
     try {
       // For demo purposes, just update local data
       // In a real app, this would make an API call
-      final isFavorite = _favoriteListings.any((listing) => listing.id == listingId);
+      final isFavorite =
+          _favoriteListings.any((listing) => listing.id == listingId);
 
       if (isFavorite) {
         // Remove from favorites
         _favoriteListings.removeWhere((listing) => listing.id == listingId);
       } else {
-        // Add to favorites
-        final listing = _listings.firstWhere(
-              (listing) => listing.id == listingId,
-          orElse: () async {
-            return await fetchListingById(listingId);
-          },
-        );
-        _favoriteListings.add(listing);
+        try {
+          final listing =
+              _listings.firstWhere((listing) => listing.id == listingId);
+          _favoriteListings.add(listing);
+        } catch (_) {
+          // Не знайдено в локальних списках, завантажуємо
+          final listing = await fetchListingById(listingId);
+          _favoriteListings.add(listing);
+        }
       }
 
       notifyListeners();
@@ -311,7 +323,8 @@ class ListingProvider with ChangeNotifier {
       // In a real app, this would make an API call
 
       // Update in user listings
-      final userListingIndex = _userListings.indexWhere((l) => l.id == listingId);
+      final userListingIndex =
+          _userListings.indexWhere((l) => l.id == listingId);
       if (userListingIndex >= 0) {
         final listing = _userListings[userListingIndex];
         final updatedListing = Listing(
@@ -337,7 +350,8 @@ class ListingProvider with ChangeNotifier {
         }
 
         // Update in favorite listings if it exists there
-        final favListingIndex = _favoriteListings.indexWhere((l) => l.id == listingId);
+        final favListingIndex =
+            _favoriteListings.indexWhere((l) => l.id == listingId);
         if (favListingIndex >= 0) {
           _favoriteListings[favListingIndex] = updatedListing;
         }
@@ -357,7 +371,8 @@ class ListingProvider with ChangeNotifier {
         id: 'listing1',
         userId: 'user1',
         title: 'Premium Hardwood Flooring - Clearance Sale',
-        description: 'Leftover premium oak hardwood flooring from a completed project. In excellent condition.',
+        description:
+            'Leftover premium oak hardwood flooring from a completed project. In excellent condition.',
         city: 'Toronto, ON',
         deliveryOption: DeliveryOption.pickup,
         validUntil: DateTime.now().add(Duration(days: 14)),
@@ -386,7 +401,8 @@ class ListingProvider with ChangeNotifier {
         id: 'listing2',
         userId: 'user2',
         title: 'Various Construction Tools - Great Condition',
-        description: 'Selling various construction tools in great condition. All tools well maintained and work perfectly.',
+        description:
+            'Selling various construction tools in great condition. All tools well maintained and work perfectly.',
         city: 'Vancouver, BC',
         deliveryOption: DeliveryOption.discuss,
         validUntil: DateTime.now().add(Duration(days: 21)),
@@ -427,7 +443,8 @@ class ListingProvider with ChangeNotifier {
         id: 'listing3',
         userId: 'user3',
         title: 'Free Kitchen Cabinet Handles - Renovation Leftovers',
-        description: 'Giving away unused kitchen cabinet handles from recent renovation. Still in original packaging.',
+        description:
+            'Giving away unused kitchen cabinet handles from recent renovation. Still in original packaging.',
         city: 'Montreal, QC',
         deliveryOption: DeliveryOption.pickup,
         validUntil: DateTime.now().add(Duration(days: 10)),
@@ -455,7 +472,8 @@ class ListingProvider with ChangeNotifier {
         id: 'listing4',
         userId: _userId ?? 'user4',
         title: 'Extra Paint and Supplies - Half Price',
-        description: 'Selling leftover interior paint and supplies from completed renovation. Less than half price of retail.',
+        description:
+            'Selling leftover interior paint and supplies from completed renovation. Less than half price of retail.',
         city: 'Calgary, AB',
         deliveryOption: DeliveryOption.delivery,
         validUntil: DateTime.now().add(Duration(days: 28)),

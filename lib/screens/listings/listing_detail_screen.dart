@@ -8,6 +8,7 @@ import 'package:construction_marketplace/providers/category_provider.dart';
 import 'package:construction_marketplace/providers/auth_provider.dart';
 import 'package:construction_marketplace/widgets/app_drawer.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/basic_models.dart';
 
@@ -22,7 +23,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   bool _isLoading = true;
   Listing? _listing;
   int _currentImageIndex = 0;
-  final CarouselController _carouselController = CarouselController();
+  final CarouselSliderController _carouselController = CarouselSliderController();
 
   @override
   void didChangeDependencies() {
@@ -35,10 +36,14 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
       _isLoading = true;
     });
 
-    final listingId = ModalRoute.of(context)!.settings.arguments as String;
+    final listingId = ModalRoute
+        .of(context)!
+        .settings
+        .arguments as String;
 
     try {
-      final listing = await Provider.of<ListingProvider>(context, listen: false).fetchListingById(listingId);
+      final listing = await Provider.of<ListingProvider>(context, listen: false)
+          .fetchListingById(listingId);
 
       setState(() {
         _listing = listing;
@@ -47,16 +52,17 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     } catch (error) {
       await showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(AppLocalizations.of(context)!.translate('error')),
-          content: Text(error.toString()),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(AppLocalizations.of(context)!.translate('ok')),
-            )
-          ],
-        ),
+        builder: (ctx) =>
+            AlertDialog(
+              title: Text(AppLocalizations.of(context)!.translate('error')),
+              content: Text(error.toString()),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(AppLocalizations.of(context)!.translate('ok')),
+                )
+              ],
+            ),
       );
 
       Navigator.of(context).pop();
@@ -67,7 +73,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     if (_listing == null) return;
 
     try {
-      await Provider.of<ListingProvider>(context, listen: false).toggleFavoriteListing(_listing!.id);
+      await Provider.of<ListingProvider>(context, listen: false)
+          .toggleFavoriteListing(_listing!.id);
 
       setState(() {}); // Refresh UI to update favorite icon
     } catch (error) {
@@ -83,12 +90,15 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   Future<void> _contactSeller() async {
     if (_listing == null) return;
 
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    final user = Provider
+        .of<AuthProvider>(context, listen: false)
+        .user;
 
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.translate('login_to_contact')),
+          content: Text(
+              AppLocalizations.of(context)!.translate('login_to_contact')),
           action: SnackBarAction(
             label: AppLocalizations.of(context)!.translate('login'),
             onPressed: () {
@@ -104,57 +114,63 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     // For demo, show a dialog with mock contact info
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.translate('contact_seller')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('${AppLocalizations.of(context)!.translate('email')}: seller@example.com'),
-            SizedBox(height: 8),
-            Text('${AppLocalizations.of(context)!.translate('phone')}: +1 123-456-7890'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(AppLocalizations.of(context)!.translate('close')),
+      builder: (ctx) =>
+          AlertDialog(
+            title: Text(
+                AppLocalizations.of(context)!.translate('contact_seller')),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${AppLocalizations.of(context)!.translate(
+                    'email')}: seller@example.com'),
+                SizedBox(height: 8),
+                Text('${AppLocalizations.of(context)!.translate(
+                    'phone')}: +1 123-456-7890'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(AppLocalizations.of(context)!.translate('close')),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.of(ctx).pop();
+                  // Launch email
+                  final Uri emailLaunchUri = Uri(
+                    scheme: 'mailto',
+                    path: 'seller@example.com',
+                    query: encodeQueryParameters({
+                      'subject': 'Inquiry about "${_listing!.title}"',
+                    }),
+                  );
+                  await launchUrl(emailLaunchUri);
+                },
+                child: Text(
+                    AppLocalizations.of(context)!.translate('send_email')),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.of(ctx).pop();
+                  // Launch phone call
+                  final Uri callLaunchUri = Uri(
+                    scheme: 'tel',
+                    path: '+11234567890',
+                  );
+                  await launchUrl(callLaunchUri);
+                },
+                child: Text(AppLocalizations.of(context)!.translate('call')),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              // Launch email
-              final Uri emailLaunchUri = Uri(
-                scheme: 'mailto',
-                path: 'seller@example.com',
-                query: encodeQueryParameters({
-                  'subject': 'Inquiry about "${_listing!.title}"',
-                }),
-              );
-              await launchUrl(emailLaunchUri);
-            },
-            child: Text(AppLocalizations.of(context)!.translate('send_email')),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              // Launch phone call
-              final Uri callLaunchUri = Uri(
-                scheme: 'tel',
-                path: '+11234567890',
-              );
-              await launchUrl(callLaunchUri);
-            },
-            child: Text(AppLocalizations.of(context)!.translate('call')),
-          ),
-        ],
-      ),
     );
   }
 
   String? encodeQueryParameters(Map<String, String> params) {
     return params.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(
+        e.value)}')
         .join('&');
   }
 
@@ -262,7 +278,10 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       return Builder(
                         builder: (BuildContext context) {
                           return Container(
-                            width: MediaQuery.of(context).size.width,
+                            width: MediaQuery
+                                .of(context)
+                                .size
+                                .width,
                             decoration: BoxDecoration(
                               color: Colors.grey[200],
                             ),
@@ -293,7 +312,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       child: Container(
                         color: Colors.transparent,
                         padding: EdgeInsets.all(8),
-                        child: Icon(Icons.arrow_back_ios, color: Colors.white70),
+                        child: Icon(
+                            Icons.arrow_back_ios, color: Colors.white70),
                       ),
                     ),
                   ),
@@ -308,7 +328,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       child: Container(
                         color: Colors.transparent,
                         padding: EdgeInsets.all(8),
-                        child: Icon(Icons.arrow_forward_ios, color: Colors.white70),
+                        child: Icon(
+                            Icons.arrow_forward_ios, color: Colors.white70),
                       ),
                     ),
                   ),
@@ -321,7 +342,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       right: 0,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: _listing!.photoUrls!.asMap().entries.map((entry) {
+                        children: _listing!.photoUrls!.asMap().entries.map((
+                            entry) {
                           return Container(
                             width: 8.0,
                             height: 8.0,
@@ -343,7 +365,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 height: 200,
                 color: Colors.grey[300],
                 child: Center(
-                  child: Icon(Icons.image_not_supported, size: 64, color: Colors.grey),
+                  child: Icon(
+                      Icons.image_not_supported, size: 64, color: Colors.grey),
                 ),
               ),
 
@@ -373,7 +396,9 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   ),
                   if (_listing!.status == ListingStatus.available) ...[
                     Text(
-                      ' • ${localization.translate('valid_until')} ${dateFormatter.format(_listing!.validUntil)}',
+                      ' • ${localization.translate(
+                          'valid_until')} ${dateFormatter.format(
+                          _listing!.validUntil)}',
                       style: TextStyle(
                         color: statusColor,
                       ),
@@ -392,7 +417,11 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   // Title
                   Text(
                     _listing!.title,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    style: Theme
+                        .of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -421,7 +450,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       Icon(
                         _listing!.deliveryOption == DeliveryOption.pickup
                             ? Icons.store
-                            : (_listing!.deliveryOption == DeliveryOption.delivery
+                            : (_listing!.deliveryOption ==
+                            DeliveryOption.delivery
                             ? Icons.local_shipping
                             : Icons.question_answer),
                         size: 16,
@@ -431,7 +461,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       Text(
                         _listing!.deliveryOption == DeliveryOption.pickup
                             ? localization.translate('pickup_only')
-                            : (_listing!.deliveryOption == DeliveryOption.delivery
+                            : (_listing!.deliveryOption ==
+                            DeliveryOption.delivery
                             ? localization.translate('can_ship')
                             : localization.translate('requires_discussion')),
                         style: TextStyle(
@@ -444,7 +475,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   SizedBox(height: 16),
 
                   // Description (if available)
-                  if (_listing!.description != null && _listing!.description!.isNotEmpty) ...[
+                  if (_listing!.description != null &&
+                      _listing!.description!.isNotEmpty) ...[
                     Text(
                       localization.translate('description'),
                       style: TextStyle(
@@ -515,7 +547,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                     ? localization.translate('free')
                                     : formatter.format(item.price),
                                 style: TextStyle(
-                                  color: item.isFree ? Colors.green : Colors.blue[800],
+                                  color: item.isFree ? Colors.green : Colors
+                                      .blue[800],
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),
@@ -526,7 +559,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                               // Category & Subcategory
                               Row(
                                 children: [
-                                  Icon(Icons.category, size: 14, color: Colors.grey),
+                                  Icon(Icons.category, size: 14,
+                                      color: Colors.grey),
                                   SizedBox(width: 4),
                                   Text(
                                     subcategoryName != null
@@ -545,10 +579,12 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                               // Quantity & Unit
                               Row(
                                 children: [
-                                  Icon(Icons.format_list_numbered, size: 14, color: Colors.grey),
+                                  Icon(Icons.format_list_numbered, size: 14,
+                                      color: Colors.grey),
                                   SizedBox(width: 4),
                                   Text(
-                                    '${item.quantity} ${localization.translate('unit_${item.unit}')}',
+                                    '${item.quantity} ${localization.translate(
+                                        'unit_${item.unit}')}',
                                     style: TextStyle(
                                       color: Colors.grey[700],
                                       fontSize: 14,
@@ -558,14 +594,19 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                               ),
 
                               // Manufacturer & Model (if available)
-                              if (item.manufacturer != null && item.manufacturer!.isNotEmpty) ...[
+                              if (item.manufacturer != null &&
+                                  item.manufacturer!.isNotEmpty) ...[
                                 SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    Icon(Icons.business, size: 14, color: Colors.grey),
+                                    Icon(Icons.business, size: 14,
+                                        color: Colors.grey),
                                     SizedBox(width: 4),
                                     Text(
-                                      '${item.manufacturer}${item.model != null && item.model!.isNotEmpty ? ' - ${item.model}' : ''}',
+                                      '${item.manufacturer}${item.model !=
+                                          null && item.model!.isNotEmpty
+                                          ? ' - ${item.model}'
+                                          : ''}',
                                       style: TextStyle(
                                         color: Colors.grey[700],
                                         fontSize: 14,
@@ -601,3 +642,5 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
       )
           : null,
     );
+  }
+}
