@@ -154,4 +154,9 @@
   "language_changed": "Language changed",
 
   "additional_filters": "Additional Filters"
+
+
+  "accept_terms_and_privacy": "I accept the Terms of Service and Privacy Policy",
+  "accept_terms_required": "You must accept the Terms of Service and Privacy Policy",
+  "verification_email_sent": "Verification email sent. Please check your inbox."
 }

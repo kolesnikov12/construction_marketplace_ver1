@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:construction_marketplace/providers/auth_provider.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 
+import '../../utils/validators.dart';
+
 class RegisterScreen extends StatefulWidget {
   static const routeName = '/register';
 
@@ -18,6 +20,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _acceptTerms = false;  // Додаємо прийняття умов
 
   @override
   void dispose() {
@@ -34,6 +39,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    if (!_acceptTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.translate('accept_terms_required')),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -45,6 +60,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _nameController.text.trim(),
         _phoneController.text.trim(),
       );
+
+      // Після успішної реєстрації показуємо повідомлення про необхідність підтвердження електронної пошти
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.translate('verification_email_sent')),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (error) {
       await showDialog(
         context: context,
@@ -92,13 +117,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: localization.translate('name'),
                       border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.person),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return localization.translate('field_required');
-                      }
-                      return null;
-                    },
+                    textInputAction: TextInputAction.next,
+                    validator: (value) => Validators.validateName(value),
                   ),
                   SizedBox(height: 16),
                   TextFormField(
@@ -106,14 +128,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: localization.translate('email'),
                       border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.email),
+                      hintText: 'example@email.com',
                     ),
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return localization.translate('field_required');
-                      }
-                      return null;
-                    },
+                    textInputAction: TextInputAction.next,
+                    validator: (value) => Validators.validateEmail(value),
+                    autocorrect: false,
+                    enableSuggestions: false,
                   ),
                   SizedBox(height: 16),
                   TextFormField(
@@ -121,14 +143,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: localization.translate('phone'),
                       border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.phone),
+                      hintText: '(123) 456-7890',
                     ),
                     keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return localization.translate('field_required');
-                      }
-                      return null;
-                    },
+                    textInputAction: TextInputAction.next,
+                    validator: (value) => Validators.validatePhone(value),
+                    // Додаємо маску для телефонного номера через пакет mask_text_input_formatter
+                    inputFormatters: [
+                      // MaskTextInputFormatter(
+                      //   mask: '(###) ###-####',
+                      //   filter: {"#": RegExp(r'[0-9]')},
+                      // ),
+                    ],
                   ),
                   SizedBox(height: 16),
                   TextFormField(
@@ -136,17 +163,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: localization.translate('password'),
                       border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                     ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return localization.translate('field_required');
-                      }
-                      if (value.length < 6) {
-                        return localization.translate('password_short');
-                      }
-                      return null;
-                    },
+                    obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.next,
+                    validator: (value) => Validators.validatePassword(value),
                   ),
                   SizedBox(height: 16),
                   TextFormField(
@@ -154,23 +185,70 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: localization.translate('confirm_password'),
                       border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                      ),
                     ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return localization.translate('field_required');
-                      }
-                      if (value != _passwordController.text) {
-                        return localization.translate('passwords_dont_match');
-                      }
-                      return null;
-                    },
+                    obscureText: _obscureConfirmPassword,
+                    textInputAction: TextInputAction.done,
+                    validator: (value) => Validators.validateConfirmPassword(
+                      value,
+                      _passwordController.text,
+                    ),
+                    onFieldSubmitted: (_) => _submit(),
                   ),
+                  SizedBox(height: 16),
+
+                  // Додаємо поле для згоди з умовами
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _acceptTerms,
+                        onChanged: (value) {
+                          setState(() {
+                            _acceptTerms = value ?? false;
+                          });
+                        },
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _acceptTerms = !_acceptTerms;
+                            });
+                          },
+                          child: Text(
+                            localization.translate('accept_terms_and_privacy'),
+                            style: TextStyle(
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
                   SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _submit,
                     child: _isLoading
-                        ? CircularProgressIndicator(color: Colors.white)
+                        ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
                         : Text(localization.translate('register')),
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 12),
