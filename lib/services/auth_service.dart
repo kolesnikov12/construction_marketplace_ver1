@@ -78,7 +78,7 @@ class AuthService {
       );
       final fbUser = fbUserCredential.user;
 
-      if (fbUser!.emailVerified) {
+      if (!fbUser!.emailVerified) {
         return AuthResult(error: 'Please verify your email before logging in.');
       }
 
