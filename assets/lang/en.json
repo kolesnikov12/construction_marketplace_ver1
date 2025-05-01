@@ -25,7 +25,6 @@
 
   "home": "Home",
   "tenders": "Tenders",
-  "listings": "Listings",
   "profile": "Profile",
   "favorites": "Favorites",
   "settings": "Settings",
@@ -46,7 +45,6 @@
   "passwords_dont_match": "Passwords don't match",
 
   "tender": "Tender",
-  "tenders": "Tenders",
   "create_tender": "Create Tender",
   "edit_tender": "Edit Tender",
   "tender_title": "Tender Title",
@@ -153,10 +151,14 @@
   "french": "French",
   "language_changed": "Language changed",
 
-  "additional_filters": "Additional Filters"
+  "additional_filters": "Additional Filters",
 
 
   "accept_terms_and_privacy": "I accept the Terms of Service and Privacy Policy",
   "accept_terms_required": "You must accept the Terms of Service and Privacy Policy",
-  "verification_email_sent": "Verification email sent. Please check your inbox."
+  "verification_email_sent": "Verification email sent. Please check your inbox.",
+  "file_too_large": "File size exceeds 5MB",
+  "@file_too_large": {
+    "description": "Error message when selected file exceeds size limit"
+  }
 }
