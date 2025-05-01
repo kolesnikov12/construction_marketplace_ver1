@@ -150,7 +150,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     textInputAction: TextInputAction.next,
                     validator: (value) => Validators.validatePhone(value),
                     // Додаємо маску для телефонного номера через пакет mask_text_input_formatter
-                    inputFormatters: [
+                    inputFormatters: const [
                       // MaskTextInputFormatter(
                       //   mask: '(###) ###-####',
                       //   filter: {"#": RegExp(r'[0-9]')},
@@ -236,7 +236,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ],
                   ),
-
                   SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _submit,

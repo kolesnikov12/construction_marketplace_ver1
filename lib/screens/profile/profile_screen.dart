@@ -1,10 +1,12 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:web/web.dart' as web;
+import 'dart:typed_data';
+import 'dart:js_interop';
 import 'package:construction_marketplace/providers/auth_provider.dart';
 import 'package:construction_marketplace/widgets/app_drawer.dart';
-import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
+
+import '../../utils/l10n/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
   static const routeName = '/profile';
@@ -26,7 +28,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  File? _profileImage;
+  web.File? _profileImage;
+  Uint8List? _profileImageBytes; // Для відображення зображення
   bool _isLoading = false;
   bool _isPasswordChanging = false;
 
@@ -56,46 +59,34 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(AppLocalizations.of(context)!.translate('select_image')),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                GestureDetector(
-                  child: Text(AppLocalizations.of(context)!.translate('take_photo')),
-                  onTap: () async {
-                    Navigator.of(context).pop();
-                    final pickedFile = await picker.pickImage(source: ImageSource.camera);
-                    if (pickedFile != null) {
-                      setState(() {
-                        _profileImage = File(pickedFile.path);
-                      });
-                    }
-                  },
-                ),
-                Padding(padding: EdgeInsets.all(8.0)),
-                GestureDetector(
-                  child: Text(AppLocalizations.of(context)!.translate('choose_from_gallery')),
-                  onTap: () async {
-                    Navigator.of(context).pop();
-                    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-                    if (pickedFile != null) {
-                      setState(() {
-                        _profileImage = File(pickedFile.path);
-                      });
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    final input = web.HTMLInputElement();
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.click();
+
+    input.onChange.listen((event) async {
+      final files = input.files;
+      if (files != null && files.length > 0) {
+        final file = files.item(0); // Отримуємо web.File
+        if (file != null) {
+          if (file.size > 5 * 1024 * 1024) { // Обмеження 5MB
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(AppLocalizations.of(context)!.translate('file_too_large')),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+          final arrayBuffer = await file.arrayBuffer().toDart;
+          final bytes = arrayBuffer.toDart.asUint8List();
+          setState(() {
+            _profileImage = file;
+            _profileImageBytes = bytes; // Зберігаємо байти для відображення
+          });
+        }
+      }
+    });
   }
 
   Future<void> _updateProfile() async {
@@ -108,18 +99,27 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     });
 
     try {
-      await Provider.of<AuthProvider>(context, listen: false).updateProfile(
+      final success = await Provider.of<AuthProvider>(context, listen: false).updateProfile(
         _nameController.text.trim(),
         _phoneController.text.trim(),
-        _profileImage?.path,
+        _profileImage, // Передаємо web.File?
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.translate('profile_updated')),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.translate('profile_updated')),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(Provider.of<AuthProvider>(context, listen: false).errorMessage ?? 'Unknown error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -144,22 +144,30 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     });
 
     try {
-      await Provider.of<AuthProvider>(context, listen: false).changePassword(
+      final success = await Provider.of<AuthProvider>(context, listen: false).changePassword(
         _currentPasswordController.text,
         _newPasswordController.text,
       );
 
-      // Clear password fields
-      _currentPasswordController.clear();
-      _newPasswordController.clear();
-      _confirmPasswordController.clear();
+      if (success) {
+        _currentPasswordController.clear();
+        _newPasswordController.clear();
+        _confirmPasswordController.clear();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.translate('password_changed')),
-          backgroundColor: Colors.green,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.translate('password_changed')),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(Provider.of<AuthProvider>(context, listen: false).errorMessage ?? 'Unknown error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -217,12 +225,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     child: CircleAvatar(
                       radius: 60,
                       backgroundColor: Colors.grey.shade200,
-                      backgroundImage: _profileImage != null
-                          ? FileImage(_profileImage!) as ImageProvider
+                      backgroundImage: _profileImageBytes != null
+                          ? MemoryImage(_profileImageBytes!) as ImageProvider
                           : (user.profileImageUrl != null
                           ? NetworkImage(user.profileImageUrl!) as ImageProvider
                           : null),
-                      child: _profileImage == null && user.profileImageUrl == null
+                      child: _profileImageBytes == null && user.profileImageUrl == null
                           ? Icon(Icons.person, size: 60, color: Colors.grey)
                           : null,
                     ),
@@ -258,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           labelText: localization.translate('email'),
                           border: OutlineInputBorder(),
                         ),
-                        enabled: false, // Email cannot be changed
+                        enabled: false,
                       ),
                       SizedBox(height: 16),
                       TextFormField(

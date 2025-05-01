@@ -1,4 +1,3 @@
-// lib/models/user.dart
 
 class User {
   final String id;
@@ -35,8 +34,8 @@ class User {
       phone: json['phone'],
       profileImageUrl: json['profileImageUrl'],
       fcmToken: json['fcmToken'],
-      createdAt: json['createdAt'],
-      lastLoginAt: json['lastLoginAt'],
+      createdAt: DateTime.parse(json['createdAt']),
+      lastLoginAt: DateTime.parse(json['lastLoginAt']),
       preferences: json['preferences'],
       savedAddressIds: json['savedAddressIds'],
       isEmailVerified: json['isEmailVerified']
@@ -51,8 +50,8 @@ class User {
       'phone': phone,
       'profileImageUrl': profileImageUrl,
       'fcmToken': fcmToken,
-      'createdAt': createdAt,
-      'lastLoginAt': lastLoginAt,
+      'createdAt': createdAt.toIso8601String(),
+      'lastLoginAt': lastLoginAt.toIso8601String(),
       'preferences': preferences,
       'savedAddressIds': savedAddressIds,
       'isEmailVerified': isEmailVerified
