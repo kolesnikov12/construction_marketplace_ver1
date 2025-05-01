@@ -27,6 +27,18 @@ class AuthService {
     final nameError = Validators.validateName(name);
     if (nameError != null) return AuthResult(error: nameError);
 
+    final fbUserCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    final fbUser = fbUserCredential.user;
+    if (fbUser == null) {
+      return AuthResult(error: 'User creation failed');
+    }
+
+    // Додати цей рядок для відправки електронного листа
+    await fbUser.sendEmailVerification();
+
     try {
       final formattedPhone = Validators.formatPhoneNumber(phone);
       final fbUserCredential = await _firebaseAuth.createUserWithEmailAndPassword(

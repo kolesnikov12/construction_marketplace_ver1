@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:construction_marketplace/providers/auth_provider.dart';
 import 'package:construction_marketplace/screens/auth/register_screen.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 
+import '../../providers/auth_provider.dart';
 import '../../utils/validators.dart';
+import '../home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   static const routeName = '/login';
@@ -41,6 +42,15 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text.trim(),
         _passwordController.text,
       );
+      final success = await Provider.of<AuthProvider>(context, listen: false).login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+      if (success && mounted) {
+        // Перехід на головний екран
+        Navigator.of(context).pushNamed(HomeScreen.routeName);
+      }
+
     } catch (error) {
       await showDialog(
         context: context,

@@ -200,12 +200,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
                       arguments: listing.id,
                     );
                   },
-                  actionBuilder: (BuildContext context) {
-                    return IconButton(
-                      icon: Icon(Icons.favorite, color: Colors.red),
-                      onPressed: () => _toggleFavoriteListing(listing.id),
-                    );
-                  },
                 );
               },
             ),
