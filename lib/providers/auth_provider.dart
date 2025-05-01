@@ -12,7 +12,8 @@ enum AuthStatus {
   authenticated,
   unauthenticated,
   authenticating,
-  registering
+  registering,
+  emailUnverified,
 }
 
 class AuthProvider with ChangeNotifier {

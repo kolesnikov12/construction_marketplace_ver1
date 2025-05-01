@@ -37,7 +37,9 @@ class User {
       createdAt: DateTime.parse(json['createdAt']),
       lastLoginAt: DateTime.parse(json['lastLoginAt']),
       preferences: json['preferences'],
-      savedAddressIds: json['savedAddressIds'],
+      savedAddressIds: json['savedAddressIds'] != null
+          ? List<String>.from(json['savedAddressIds'])
+          : [],
       isEmailVerified: json['isEmailVerified']
     );
   }
