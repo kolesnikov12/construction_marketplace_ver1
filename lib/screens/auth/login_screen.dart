@@ -29,48 +29,54 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      await Provider.of<AuthProvider>(context, listen: false).login(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
-      final success = await Provider.of<AuthProvider>(context, listen: false).login(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
-      if (success && mounted) {
-        // Перехід на головний екран
-        Navigator.of(context).pushNamed(HomeScreen.routeName);
+    print('Submit pressed');
+   try {
+      if (!_formKey.currentState!.validate()) {
+        print('Форма не валідна');
+        return;
       }
+      print('Форма валідна, надсилаю логін...');
 
-    } catch (error) {
-      await showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(AppLocalizations.of(context)!.translate('error')),
-          content: Text(error.toString()),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(AppLocalizations.of(context)!.translate('ok')),
-            ),
-          ],
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        print('Викликаю AuthProvider.login...');
+        final success = await Provider.of<AuthProvider>(context, listen: false).login(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+        print('Логін успішний: $success');
+        if (success && mounted) {
+          // Перехід на головний екран
+          Navigator.of(context).pushNamed(HomeScreen.routeName);
+        }
+      } catch (error) {
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(AppLocalizations.of(context)!.translate('error')),
+            content: Text(error.toString()),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(AppLocalizations.of(context)!.translate('ok')),
+              ),
+            ],
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
+    } catch (e, stack) {
+    print('Login error: $e');
+    print(stack);
+    setState(() => _isLoading = false);
     }
   }
 
@@ -146,11 +152,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(localization.translate('forgot_password')),
                     ),
                   ),
-                  SizedBox(height: 24),
+                  const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
                     child: _isLoading
-                        ? SizedBox(
+                        ? const SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
@@ -159,11 +168,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     )
                         : Text(localization.translate('login')),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pushNamed(RegisterScreen.routeName);

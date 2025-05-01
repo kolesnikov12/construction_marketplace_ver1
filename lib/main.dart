@@ -38,6 +38,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProxyProvider<AuthProvider, TenderProvider>(
           create: (_) => TenderProvider(),
           update: (_, authProvider, previousTenderProvider) {
@@ -54,7 +55,6 @@ class MyApp extends StatelessWidget {
             return provider;
           },
         ),
-        ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
       child: Consumer<LocaleProvider>(
         builder: (ctx, localeProvider, _) => MaterialApp(

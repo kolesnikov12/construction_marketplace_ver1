@@ -1,4 +1,5 @@
 import 'dart:js_interop';
+import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/basic_models.dart';
 import '../utils/validators.dart';
@@ -27,17 +28,7 @@ class AuthService {
     final nameError = Validators.validateName(name);
     if (nameError != null) return AuthResult(error: nameError);
 
-    final fbUserCredential = await _firebaseAuth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-    final fbUser = fbUserCredential.user;
-    if (fbUser == null) {
-      return AuthResult(error: 'User creation failed');
-    }
-
-    // Додати цей рядок для відправки електронного листа
-    await fbUser.sendEmailVerification();
+    await firebase_auth.FirebaseAuth.instance.currentUser?.sendEmailVerification();
 
     try {
       final formattedPhone = Validators.formatPhoneNumber(phone);
@@ -90,7 +81,10 @@ class AuthService {
       );
       final fbUser = fbUserCredential.user;
 
-      if (!fbUser!.emailVerified) {
+      if (fbUser == null) {
+        return AuthResult(error: 'Authentication failed: no user returned');
+      }
+      if (!fbUser.emailVerified) {
         return AuthResult(error: 'Please verify your email before logging in.');
       }
 
@@ -109,7 +103,9 @@ class AuthService {
         user: User.fromJson(userData),
         token: token,
       );
-    } catch (e) {
+    } catch (e, stacktrace) {
+      debugPrint('Login error: $e');
+      debugPrint('Stacktrace: $stacktrace');
       return AuthResult(error: _handleFirebaseAuthError(e));
     }
   }

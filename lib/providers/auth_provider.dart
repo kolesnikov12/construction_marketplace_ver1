@@ -5,6 +5,7 @@ import 'package:construction_marketplace/models/basic_models.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
 import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
 
 enum AuthStatus {
   uninitialized,
@@ -16,6 +17,7 @@ enum AuthStatus {
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
+  final FirestoreService _firestoreService = FirestoreService();
 
   String? _token;
   DateTime? _expiryDate;
@@ -65,6 +67,9 @@ class AuthProvider with ChangeNotifier {
       if (!authResult.success) {
         _status = AuthStatus.unauthenticated;
         notifyListeners();
+        if (kDebugMode) {
+          print('Auth result: success=${authResult.success}, token=${authResult.token}, user=${authResult.user}');
+        }
         return false;
       }
 
@@ -97,28 +102,38 @@ class AuthProvider with ChangeNotifier {
     try {
       final authResult = await _authService.signup(email, password, name, phone);
 
-      if (!authResult.success) {
+      if (!authResult.success || authResult.user == null) {
         _errorMessage = authResult.error;
         _status = AuthStatus.unauthenticated;
         notifyListeners();
         return false;
       }
 
-      if (!authResult.success) {
-        _errorMessage = authResult.error;
-        _status = AuthStatus.unauthenticated;
-        notifyListeners();
-        return false;
-      }
+      final now = DateTime.now();
 
-      // Додати виклик методу відправки підтвердження, якщо він ще не викликався в AuthService
+      final newUser = User(
+        id: authResult.user!.id,
+        name: name,
+        email: email,
+        phone: phone,
+        profileImageUrl: null,
+        fcmToken: null,
+        createdAt: now,
+        lastLoginAt: now,
+        preferences: null,
+        savedAddressIds: [],
+        isEmailVerified: authResult.user!.isEmailVerified,
+      );
+
+      await _firestoreService.createUserDocument(user: newUser);
+
       if (!authResult.user!.isEmailVerified) {
         await _authService.sendEmailVerification();
       }
 
       _token = authResult.token;
-      _userId = authResult.user!.id;
-      _user = authResult.user;
+      _userId = newUser.id;
+      _user = newUser;
 
       final decodedToken = JwtDecoder.decode(authResult.token!);
       final expiryTimestamp = decodedToken['exp'] * 1000;
@@ -149,6 +164,9 @@ class AuthProvider with ChangeNotifier {
         _errorMessage = authResult.error;
         _status = AuthStatus.unauthenticated;
         notifyListeners();
+        if (kDebugMode) {
+          print('Login error: ${authResult.error}');
+        }
         return false;
       }
 
@@ -157,6 +175,9 @@ class AuthProvider with ChangeNotifier {
       _user = authResult.user;
 
       final decodedToken = JwtDecoder.decode(authResult.token!);
+      if (kDebugMode) {
+        print('JwtDecoder.decode(authResult.token!) = $decodedToken');
+      }
       final expiryTimestamp = decodedToken['exp'] * 1000;
       _expiryDate = DateTime.fromMillisecondsSinceEpoch(expiryTimestamp);
 
@@ -165,10 +186,14 @@ class AuthProvider with ChangeNotifier {
       _autoLogout();
       notifyListeners();
       return true;
-    } catch (e) {
+    } catch (e, stack) {
       _errorMessage = e.toString();
       _status = AuthStatus.unauthenticated;
       notifyListeners();
+      if (kDebugMode) {
+        print('Login _errorMessage: ${e.toString()}');
+        print('Login exception: $e\n$stack');
+      }
       return false;
     }
   }

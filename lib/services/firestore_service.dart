@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class FirestoreService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+import '../models/basic_models.dart';
 
-  Future<void> saveUser(String uid, String email) async {
-    await _db.collection('users').doc(uid).set({
-      'email': email,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+class FirestoreService {
+  Future<void> createUserDocument({ required User user }) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.id)
+        .set(user.toJson());
   }
 }
