@@ -104,6 +104,18 @@ class AuthProvider with ChangeNotifier {
         return false;
       }
 
+      if (!authResult.success) {
+        _errorMessage = authResult.error;
+        _status = AuthStatus.unauthenticated;
+        notifyListeners();
+        return false;
+      }
+
+      // Додати виклик методу відправки підтвердження, якщо він ще не викликався в AuthService
+      if (!authResult.user!.isEmailVerified) {
+        await _authService.sendEmailVerification();
+      }
+
       _token = authResult.token;
       _userId = authResult.user!.id;
       _user = authResult.user;
