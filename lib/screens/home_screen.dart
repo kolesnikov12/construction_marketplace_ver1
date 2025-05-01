@@ -3,7 +3,6 @@ import 'package:construction_marketplace/screens/tenders/listing_list_screen.dar
 import 'package:construction_marketplace/screens/tenders/tender_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:construction_marketplace/providers/auth_provider.dart';
 import 'package:construction_marketplace/providers/tender_provider.dart';
 import 'package:construction_marketplace/providers/listing_provider.dart';
 import 'package:construction_marketplace/providers/locale_provider.dart';
@@ -11,6 +10,7 @@ import 'package:construction_marketplace/screens/tenders/create_tender_screen.da
 import 'package:construction_marketplace/screens/listings/create_listing_screen.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 
+import '../providers/auth_provider.dart';
 import '../widgets/app_drawer.dart';
 
 class HomeScreen extends StatefulWidget {

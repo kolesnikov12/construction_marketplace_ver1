@@ -1,3 +1,4 @@
+class AuthService {}
 /*
 // Додаємо валідацію в AuthService:
 
