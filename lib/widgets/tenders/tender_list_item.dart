@@ -28,11 +28,11 @@ class TenderListItem extends StatelessWidget {
     // Check if tender is a favorite
     final isFavorite = tenderProvider.favoriteTenders.any((item) => item.id == tender.id);
 
-    // Format currency
-    final formatter = NumberFormat.currency(symbol: '\, decimalDigits: 0');
+    // Format currency - FIXED FORMATTER
+    final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 0);
 
-        // Format date
-        final dateFormatter = DateFormat('MMM d, yyyy');
+    // Format date
+    final dateFormatter = DateFormat('MMM d, yyyy');
 
     // Determine if tender is active
     final isActive = (tender.status == TenderStatus.open || tender.status == TenderStatus.extended) &&
@@ -99,52 +99,23 @@ class TenderListItem extends StatelessWidget {
 
               SizedBox(height: 8),
 
-              // Status and Date Row
+              // Description (limited to 4 lines)
+              if (tender.description != null && tender.description!.isNotEmpty)
+                Text(
+                  tender.description!,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
+                ),
+
+              SizedBox(height: 8),
+
+              // Status and Date Row (status badge and valid until date removed)
               Row(
                 children: [
-                  // Status
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          tender.status == TenderStatus.open ? Icons.circle :
-                          (tender.status == TenderStatus.extended ? Icons.update : Icons.check_circle),
-                          size: 12,
-                          color: statusColor,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          localization.translate(tender.status.name),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: statusColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(width: 8),
-
-                  // Valid Until
-                  if (isActive) ...[
-                    Icon(Icons.access_time, size: 12, color: Colors.grey),
-                    SizedBox(width: 4),
-                    Text(
-                      '${localization.translate('until')} ${dateFormatter.format(tender.validUntil)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
 
                   Spacer(),
 

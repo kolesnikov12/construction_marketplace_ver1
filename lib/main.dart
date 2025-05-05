@@ -1,29 +1,31 @@
-import 'package:construction_marketplace/screens/tenders/listing_list_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:construction_marketplace/widgets/auth_state_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:construction_marketplace/providers/auth_provider.dart';
-import 'package:construction_marketplace/providers/tender_provider.dart';
-import 'package:construction_marketplace/providers/listing_provider.dart';
-import 'package:construction_marketplace/providers/locale_provider.dart';
-import 'package:construction_marketplace/providers/category_provider.dart';
-import 'package:construction_marketplace/screens/home_screen.dart';
-import 'package:construction_marketplace/screens/auth/login_screen.dart';
-import 'package:construction_marketplace/screens/auth/register_screen.dart';
-import 'package:construction_marketplace/screens/tenders/tender_list_screen.dart';
-import 'package:construction_marketplace/screens/tenders/tender_detail_screen.dart';
-import 'package:construction_marketplace/screens/tenders/create_tender_screen.dart';
-import 'package:construction_marketplace/screens/listings/listing_detail_screen.dart';
-import 'package:construction_marketplace/screens/listings/create_listing_screen.dart';
-import 'package:construction_marketplace/screens/profile/profile_screen.dart';
-import 'package:construction_marketplace/screens/favorites/favorites_screen.dart';
-import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
-import 'package:construction_marketplace/utils/app_theme.dart';
 
+import 'bloc/auth_bloc.dart';
+import 'bloc/tender_bloc.dart';
+import 'bloc/listing_bloc.dart';
+import 'bloc/bloc_provider.dart';
+import 'utils/l10n/app_localizations.dart';
+import 'utils/app_theme.dart';
+import 'providers/locale_provider.dart';
+import 'providers/category_provider.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/auth/register_screen.dart';
+import 'screens/tenders/tender_list_screen.dart';
+import 'screens/tenders/tender_detail_screen.dart';
+import 'screens/tenders/create_tender_screen.dart';
+import 'screens/listings/listing_detail_screen.dart';
+import 'screens/listings/create_listing_screen.dart';
+import 'screens/profile/profile_screen.dart';
+import 'screens/favorites/favorites_screen.dart';
+import 'screens/tenders/listing_list_screen.dart';
 import 'firebase_options.dart';
+import 'package:provider/provider.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -36,62 +38,50 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
-        ChangeNotifierProxyProvider<AuthProvider, TenderProvider>(
-          create: (_) => TenderProvider(),
-          update: (_, authProvider, previousTenderProvider) {
-            final provider = previousTenderProvider ?? TenderProvider();
-            provider.update(authProvider.token, authProvider.user?.id);
-            return provider;
-          },
-        ),
-        ChangeNotifierProxyProvider<AuthProvider, ListingProvider>(
-          create: (_) => ListingProvider(),
-          update: (_, authProvider, previousListingProvider) {
-            final provider = previousListingProvider ?? ListingProvider();
-            provider.update(authProvider.token, authProvider.user?.id);
-            return provider;
-          },
-        ),
       ],
-      child: Consumer<LocaleProvider>(
-        builder: (ctx, localeProvider, _) => MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'Construction Marketplace',
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.light,
-          locale: localeProvider.locale,
-          supportedLocales: const [
-            Locale('en', ''), // English
-            Locale('fr', ''), // French
-          ],
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          initialRoute: '/',
-          routes: {
-            '/': (ctx) => Consumer<AuthProvider>(
-              builder: (ctx, authProvider, _) =>
-              authProvider.isAuth ? HomeScreen() : LoginScreen(),
+      child: BlocProvider<AuthBloc>(
+        create: () => AuthBloc(),
+        child: BlocProvider<TenderBloc>(
+          create: () => TenderBloc(),
+          child: BlocProvider<ListingBloc>(
+            create: () => ListingBloc(),
+            child: Consumer<LocaleProvider>(
+              builder: (ctx, localeProvider, _) => MaterialApp(
+                title: 'Construction Marketplace',
+                theme: AppTheme.lightTheme,
+                darkTheme: AppTheme.darkTheme,
+                themeMode: ThemeMode.light,
+                locale: localeProvider.locale,
+                supportedLocales: const [
+                  Locale('en', ''), // English
+                  Locale('fr', ''), // French
+                ],
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                initialRoute: '/',
+                routes: {
+                  '/': (ctx) => AuthStateWidget(),
+                  HomeScreen.routeName: (ctx) => HomeScreen(),
+                  LoginScreen.routeName: (ctx) => LoginScreen(),
+                  RegisterScreen.routeName: (ctx) => RegisterScreen(),
+                  TenderListScreen.routeName: (ctx) => TenderListScreen(),
+                  TenderDetailScreen.routeName: (ctx) => TenderDetailScreen(),
+                  CreateTenderScreen.routeName: (ctx) => CreateTenderScreen(),
+                  ListingListScreen.routeName: (ctx) => ListingListScreen(),
+                  ListingDetailScreen.routeName: (ctx) => ListingDetailScreen(),
+                  CreateListingScreen.routeName: (ctx) => CreateListingScreen(),
+                  ProfileScreen.routeName: (ctx) => ProfileScreen(),
+                  FavoritesScreen.routeName: (ctx) => FavoritesScreen(),
+                },
+              ),
             ),
-            HomeScreen.routeName: (ctx) => HomeScreen(),
-            LoginScreen.routeName: (ctx) => LoginScreen(),
-            RegisterScreen.routeName: (ctx) => RegisterScreen(),
-            TenderListScreen.routeName: (ctx) => TenderListScreen(),
-            TenderDetailScreen.routeName: (ctx) => TenderDetailScreen(),
-            CreateTenderScreen.routeName: (ctx) => CreateTenderScreen(),
-            ListingListScreen.routeName: (ctx) => ListingListScreen(),
-            ListingDetailScreen.routeName: (ctx) => ListingDetailScreen(),
-            CreateListingScreen.routeName: (ctx) => CreateListingScreen(),
-            ProfileScreen.routeName: (ctx) => ProfileScreen(),
-            FavoritesScreen.routeName: (ctx) => FavoritesScreen(),
-          },
+          ),
         ),
       ),
     );
