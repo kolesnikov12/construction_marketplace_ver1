@@ -58,6 +58,7 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer<LocaleProvider>(
         builder: (ctx, localeProvider, _) => MaterialApp(
+          debugShowCheckedModeBanner: false,
           title: 'Construction Marketplace',
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,

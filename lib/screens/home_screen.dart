@@ -16,6 +16,8 @@ import '../widgets/app_drawer.dart';
 class HomeScreen extends StatefulWidget {
   static const routeName = '/home';
 
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -122,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(localization.translate('language_changed')),
-                  duration: Duration(seconds: 1),
+                  duration: const Duration(seconds: 1),
                 ),
               );
             },
@@ -198,10 +200,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToCreateScreen,
-        child: Icon(Icons.add),
         tooltip: _tabController.index == 0
             ? localization.translate('create_tender')
             : localization.translate('create_listing'),
+        child: const Icon(Icons.add),
       ),
     );
   }

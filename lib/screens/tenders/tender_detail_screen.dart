@@ -262,7 +262,7 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
           children: [
             // Status Banner
             Container(
-              padding: EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               color: statusColor.withOpacity(0.1),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
