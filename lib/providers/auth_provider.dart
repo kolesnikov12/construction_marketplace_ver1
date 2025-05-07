@@ -102,9 +102,10 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final authResult = await _authService.signup(email, password, name, phone);
+      print('Auth result: success=${authResult.success}, token=${authResult.token}, user=${authResult.user}, error=${authResult.error}');
 
       if (!authResult.success || authResult.user == null) {
-        _errorMessage = authResult.error;
+        _errorMessage = authResult.error ?? 'Unknown error';
         _status = AuthStatus.unauthenticated;
         notifyListeners();
         return false;
@@ -145,10 +146,11 @@ class AuthProvider with ChangeNotifier {
       _autoLogout();
       notifyListeners();
       return true;
-    } catch (e) {
+    } catch (e, stack) {
       _errorMessage = e.toString();
       _status = AuthStatus.unauthenticated;
       notifyListeners();
+      print('Signup error: $e\n$stack');
       return false;
     }
   }
