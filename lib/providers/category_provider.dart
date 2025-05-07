@@ -1,10 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import '../models/basic_models.dart';
-
-import '../models/basic_models.dart';
+import '../models/category.dart';
 
 class CategoryProvider with ChangeNotifier {
   List<Category> _categories = [];

@@ -4,8 +4,8 @@ import 'package:construction_marketplace/providers/category_provider.dart';
 import 'package:construction_marketplace/providers/tender_provider.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
-
-import '../../models/basic_models.dart';
+import '../../models/enums.dart';
+import '../../models/tender.dart';
 
 class TenderListItem extends StatelessWidget {
   final Tender tender;
@@ -59,7 +59,7 @@ class TenderListItem extends StatelessWidget {
     }
 
     return Card(
-      margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -73,7 +73,7 @@ class TenderListItem extends StatelessWidget {
                   Expanded(
                     child: Text(
                       tender.title,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),

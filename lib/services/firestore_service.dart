@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/basic_models.dart';
+import '../models/user.dart';
 
 class FirestoreService {
   Future<void> createUserDocument({ required User user }) async {

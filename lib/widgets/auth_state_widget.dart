@@ -1,7 +1,11 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 import '../bloc/auth_bloc.dart';
+import '../bloc/base/bloc_states.dart';
 import '../bloc/bloc_provider.dart';
+import '../screens/auth/login_screen.dart';
+import '../screens/home_screen.dart';
 
 class AuthStateWidget extends StatefulWidget {
   @override
@@ -27,7 +31,7 @@ class _AuthStateWidgetState extends State<AuthStateWidget> {
       stream: authBloc.state,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return Scaffold(
+          return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(),
             ),
@@ -39,7 +43,7 @@ class _AuthStateWidgetState extends State<AuthStateWidget> {
         if (state is AuthenticatedState) {
           return HomeScreen();
         } else if (state is LoadingState) {
-          return Scaffold(
+          return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(),
             ),

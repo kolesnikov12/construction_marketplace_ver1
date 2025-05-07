@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 String handleFirebaseError(dynamic error) {
   if (error is FirebaseException) {
     switch (error.code) {

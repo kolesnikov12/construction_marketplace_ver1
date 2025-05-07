@@ -2,15 +2,14 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-
 import 'package:construction_marketplace/providers/listing_provider.dart';
 import 'package:construction_marketplace/providers/category_provider.dart';
 import 'package:construction_marketplace/providers/auth_provider.dart';
 import 'package:construction_marketplace/widgets/app_drawer.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../../models/basic_models.dart';
+import '../../models/enums.dart';
+import '../../models/listing.dart';
 
 class ListingDetailScreen extends StatefulWidget {
   static const routeName = '/listings/detail';
@@ -347,7 +346,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                           return Container(
                             width: 8.0,
                             height: 8.0,
-                            margin: EdgeInsets.symmetric(horizontal: 4.0),
+                            margin: const EdgeInsets.symmetric(horizontal: 4.0),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: _currentImageIndex == entry.key
@@ -364,7 +363,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
               Container(
                 height: 200,
                 color: Colors.grey[300],
-                child: Center(
+                child: const Center(
                   child: Icon(
                       Icons.image_not_supported, size: 64, color: Colors.grey),
                 ),

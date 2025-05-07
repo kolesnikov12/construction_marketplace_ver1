@@ -1,7 +1,6 @@
 import 'base/bloc_base.dart';
 import 'base/bloc_events.dart';
 import 'base/bloc_states.dart';
-import '../repositories/auth_repository.dart';
 import 'package:web/web.dart' as web;
 
 class AuthBloc extends Bloc {

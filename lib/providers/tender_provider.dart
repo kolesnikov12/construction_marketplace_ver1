@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../models/basic_models.dart';
+import '../models/enums.dart';
+import '../models/tender.dart';
+import '../models/tender_item.dart';
 
 class TenderProvider with ChangeNotifier {
   List<Tender> _tenders = [];

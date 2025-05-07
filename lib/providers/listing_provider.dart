@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-
-import '../models/basic_models.dart';
+import '../models/enums.dart';
+import '../models/listing.dart';
+import '../models/listing_item.dart';
 
 class ListingProvider with ChangeNotifier {
   List<Listing> _listings = [];

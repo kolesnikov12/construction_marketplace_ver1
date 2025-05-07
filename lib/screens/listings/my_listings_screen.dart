@@ -6,8 +6,8 @@ import 'package:construction_marketplace/screens/listings/create_listing_screen.
 import 'package:construction_marketplace/widgets/app_drawer.dart';
 import 'package:construction_marketplace/widgets/listings/listing_grid_item.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
-
-import '../../models/basic_models.dart';
+import '../../models/enums.dart';
+import '../../models/listing.dart';
 
 class MyListingsScreen extends StatefulWidget {
   static const routeName = '/listings/my';

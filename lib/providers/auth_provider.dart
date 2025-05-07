@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:web/web.dart' as web;
-import 'package:construction_marketplace/models/basic_models.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
+import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 

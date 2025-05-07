@@ -1,7 +1,7 @@
 import 'dart:js_interop';
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/basic_models.dart';
+import '../models/user.dart';
 import '../utils/validators.dart';
 import 'auth_result.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;

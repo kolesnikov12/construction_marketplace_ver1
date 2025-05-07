@@ -1,7 +1,7 @@
+import '../repositorties/listing_repository.dart';
 import 'base/bloc_base.dart';
 import 'base/bloc_events.dart';
 import 'base/bloc_states.dart';
-import '../repositories/listing_repository.dart';
 import '../models/enums.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

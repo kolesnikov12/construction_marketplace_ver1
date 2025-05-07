@@ -1,4 +1,4 @@
-import '../models/basic_models.dart';
+import '../models/user.dart';
 
 class AuthResult {
   final User? user;

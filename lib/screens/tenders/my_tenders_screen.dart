@@ -6,8 +6,8 @@ import 'package:construction_marketplace/screens/tenders/create_tender_screen.da
 import 'package:construction_marketplace/widgets/app_drawer.dart';
 import 'package:construction_marketplace/widgets/tenders/tender_list_item.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
-
-import '../../models/basic_models.dart';
+import '../../models/enums.dart';
+import '../../models/tender.dart';
 
 class MyTendersScreen extends StatefulWidget {
   static const routeName = '/tenders/my';

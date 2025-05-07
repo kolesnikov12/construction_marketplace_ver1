@@ -5,7 +5,7 @@ import 'package:construction_marketplace/providers/category_provider.dart';
 import 'package:construction_marketplace/providers/city_provider.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 
-import '../../models/basic_models.dart';
+import '../../models/enums.dart';
 
 class ListingFilterDialog extends StatefulWidget {
   final String? initialCity;
