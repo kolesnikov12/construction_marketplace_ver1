@@ -2,12 +2,9 @@ import '../repositorties/auth_repository.dart';
 import 'base/bloc_base.dart';
 import 'base/bloc_events.dart';
 import 'base/bloc_states.dart';
-import 'package:web/web.dart' as web;
 
 class AuthBloc extends Bloc {
   final AuthRepository _authRepository = AuthRepository();
-
-  // 2. Fix for auth_bloc.dart to implement the _handleEvent method:
 
   // In auth_bloc.dart:
   void handleEvent(BlocEvent event) async {

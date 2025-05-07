@@ -1,3 +1,4 @@
+import 'package:construction_marketplace/providers/auth_provider.dart';
 import 'package:construction_marketplace/widgets/auth_state_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
@@ -49,6 +51,7 @@ class MyApp extends StatelessWidget {
             create: () => ListingBloc(),
             child: Consumer<LocaleProvider>(
               builder: (ctx, localeProvider, _) => MaterialApp(
+                debugShowCheckedModeBanner: false,
                 title: 'Construction Marketplace',
                 theme: AppTheme.lightTheme,
                 darkTheme: AppTheme.darkTheme,
