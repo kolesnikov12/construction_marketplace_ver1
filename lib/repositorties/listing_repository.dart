@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../models/listing.dart';
 import '../models/listing_item.dart';
 import '../models/enums.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ListingRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -301,27 +302,31 @@ class ListingRepository {
   }
 
   // Helper methods
+  // In _uploadPhotos method in listing_repository.dart
   Future<List<String>> _uploadPhotos(List<dynamic> photos, String userId) async {
     List<String> urls = [];
 
     for (var photo in photos) {
-      final String fileName = '${_uuid.v4()}_${photo.path.split('/').last}';
-      final ref = _storage.ref().child('listings/$userId/$fileName');
+      try {
+        final String fileName = '${_uuid.v4()}_${photo.path.split('/').last}';
+        final ref = _storage.ref().child('listings/$userId/$fileName');
 
-      // Handle both normal File and web.File
-      if (photo is web.File) {
-        final arrayBuffer = await photo.arrayBuffer().toDart;
-        final uint8List = arrayBuffer.toDart.asUint8List();
+        if (kIsWeb) {
+          // For web platform - simple direct upload
+          final task = ref.putBlob(photo);
+          await task.whenComplete(() => null);
+        } else {
+          // For mobile platforms
+          final task = ref.putFile(photo);
+          await task.whenComplete(() => null);
+        }
 
-        final uploadTask = ref.putData(uint8List);
-        await uploadTask.whenComplete(() => null);
-      } else {
-        final uploadTask = ref.putFile(photo);
-        await uploadTask.whenComplete(() => null);
+        final url = await ref.getDownloadURL();
+        urls.add(url);
+      } catch (e) {
+        print('Error uploading photo: $e');
+        // Continue with next photo
       }
-
-      final url = await ref.getDownloadURL();
-      urls.add(url);
     }
 
     return urls;

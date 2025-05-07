@@ -4,12 +4,16 @@ import 'base/bloc_base.dart';
 class BlocProvider<T extends Bloc> extends StatefulWidget {
   final Widget child;
   final T Function() create;
+  late final T _bloc;
 
   BlocProvider({
     Key? key,
     required this.child,
     required this.create,
-  }) : super(key: key);
+  }) : super(key: key) {
+    // Move the initialization to the constructor body instead of the initializer list
+    _bloc = create();
+  }
 
   @override
   _BlocProviderState<T> createState() => _BlocProviderState<T>();
@@ -21,8 +25,6 @@ class BlocProvider<T extends Bloc> extends StatefulWidget {
     }
     return provider._bloc;
   }
-
-  final T _bloc = create();
 }
 
 class _BlocProviderState<T extends Bloc> extends State<BlocProvider<T>> {

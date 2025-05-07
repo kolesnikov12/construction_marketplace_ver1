@@ -1,11 +1,14 @@
-import 'dart:io' as web;
-
+import 'dart:async';
+import 'dart:io' as io;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
 import '../models/tender.dart';
 import '../models/tender_item.dart';
 import '../models/enums.dart';
+import 'package:web/web.dart' as web;
+import 'dart:typed_data' as typed_data;
+import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 
 class TenderRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -330,31 +333,46 @@ class TenderRepository {
   }
 
   // Helper methods
+  // In your _uploadAttachments method in tender_repository.dart
+// In _uploadAttachments method in tender_repository.dart
+  // In _uploadAttachments method in tender_repository.dart
   Future<List<String>> _uploadAttachments(List<dynamic> attachments, String userId) async {
     List<String> urls = [];
 
     for (var attachment in attachments) {
-      final String fileName = '${_uuid.v4()}_${attachment.path.split('/').last}';
-      final ref = _storage.ref().child('tenders/$userId/$fileName');
+      try {
+        final String fileName = '${_uuid.v4()}_${attachment.path.split('/').last}';
+        final ref = _storage.ref().child('tenders/$userId/$fileName');
 
-      // Handle both normal File and web.File
-      if (attachment is web.File) {
-        final arrayBuffer = await attachment.arrayBuffer().toDart;
-        final uint8List = arrayBuffer.toDart.asUint8List();
+        if (kIsWeb) {
+          // Simple web upload - no complex conversion
+          // This uses the Firebase Storage web API directly
+          final task = ref.putData(attachment);
+          await task.whenComplete(() => null);
+        } else {
+          // Mobile upload
+          // Fix: use proper type checking instead of casting
+          if (attachment is io.File) {
+            final task = ref.putFile(attachment);
+            await task.whenComplete(() => null);
+          } else {
+            print('Unsupported file type for mobile platform');
+            continue;
+          }
+        }
 
-        final uploadTask = ref.putData(uint8List);
-        await uploadTask.whenComplete(() => null);
-      } else {
-        final uploadTask = ref.putFile(attachment);
-        await uploadTask.whenComplete(() => null);
+        final url = await ref.getDownloadURL();
+        urls.add(url);
+      } catch (e) {
+        print('Error uploading attachment: $e');
+        // Continue with next attachment
       }
-
-      final url = await ref.getDownloadURL();
-      urls.add(url);
     }
 
     return urls;
   }
+
+
 
   Future<void> _deleteAttachments(List<String> urls) async {
     for (var url in urls) {

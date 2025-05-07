@@ -26,11 +26,13 @@ class AuthSignupEvent extends BlocEvent {
 class AuthLogoutEvent extends BlocEvent {}
 
 class AuthUpdateProfileEvent extends BlocEvent {
+  final String userId;
   final String name;
   final String phone;
   final dynamic profileImage; // Could be File or web.File
 
   AuthUpdateProfileEvent({
+    required this.userId,
     required this.name,
     required this.phone,
     this.profileImage,

@@ -30,6 +30,36 @@ class Tender {
     required this.items,
     this.attachmentUrls,
   });
+  // Add this method to your Tender class in lib/models/tender.dart
+  Tender copyWith({
+    String? id,
+    String? userId,
+    String? title,
+    String? description,
+    String? city,
+    double? budget,
+    DeliveryOption? deliveryOption,
+    DateTime? validUntil,
+    TenderStatus? status,
+    DateTime? createdAt,
+    List<TenderItem>? items,
+    List<String>? attachmentUrls,
+  }) {
+    return Tender(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      city: city ?? this.city,
+      budget: budget ?? this.budget,
+      deliveryOption: deliveryOption ?? this.deliveryOption,
+      validUntil: validUntil ?? this.validUntil,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      items: items ?? this.items,
+      attachmentUrls: attachmentUrls ?? this.attachmentUrls,
+    );
+  }
 
   factory Tender.fromJson(Map<String, dynamic> json) {
     return Tender(

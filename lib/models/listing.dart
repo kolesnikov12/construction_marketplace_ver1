@@ -29,6 +29,35 @@ class Listing {
     this.photoUrls,
   });
 
+  // Add this method to your Listing class in lib/models/listing.dart
+  Listing copyWith({
+    String? id,
+    String? userId,
+    String? title,
+    String? description,
+    String? city,
+    DeliveryOption? deliveryOption,
+    DateTime? validUntil,
+    ListingStatus? status,
+    DateTime? createdAt,
+    List<ListingItem>? items,
+    List<String>? photoUrls,
+  }) {
+    return Listing(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      city: city ?? this.city,
+      deliveryOption: deliveryOption ?? this.deliveryOption,
+      validUntil: validUntil ?? this.validUntil,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      items: items ?? this.items,
+      photoUrls: photoUrls ?? this.photoUrls,
+    );
+  }
+
   factory Listing.fromJson(Map<String, dynamic> json) {
     return Listing(
       id: json['id'],
