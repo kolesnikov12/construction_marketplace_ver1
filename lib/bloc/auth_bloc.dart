@@ -7,6 +7,7 @@ class AuthBloc extends Bloc {
   final AuthRepository _authRepository = AuthRepository();
 
   // In auth_bloc.dart:
+  @override
   void handleEvent(BlocEvent event) async {
     if (event is AuthLoginEvent) {
       await _handleLogin(event);

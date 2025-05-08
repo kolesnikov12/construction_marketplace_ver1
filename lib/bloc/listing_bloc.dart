@@ -9,7 +9,7 @@ class ListingBloc extends Bloc {
   final ListingRepository _listingRepository = ListingRepository();
 
   @override
-  void _handleEvent(BlocEvent event) async {
+  void handleEvent(BlocEvent event) async {
     if (event is FetchListingsEvent) {
       await _handleFetchListings(event);
     } else if (event is FetchUserListingsEvent) {
@@ -128,10 +128,12 @@ class ListingBloc extends Bloc {
     }
   }
 
-  Future<void> _handleToggleFavoriteListing(ToggleFavoriteListingEvent event) async {
+  Future<void> _handleToggleFavoriteListing(
+      ToggleFavoriteListingEvent event) async {
     try {
       final userId = await _getCurrentUserId();
-      final isFavorite = await _listingRepository.toggleFavoriteListing(event.listingId, userId);
+      final isFavorite = await _listingRepository.toggleFavoriteListing(
+          event.listingId, userId);
 
       emitState(ListingFavoriteToggledState(isFavorite: isFavorite));
     } catch (e) {

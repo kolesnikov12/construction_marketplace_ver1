@@ -9,8 +9,7 @@ import '../models/enums.dart';
 class TenderBloc extends Bloc {
   final TenderRepository _tenderRepository = TenderRepository();
 
-  @override
-  void _handleEvent(BlocEvent event) async {
+  void handleEvent(BlocEvent event) async {
     if (event is FetchTendersEvent) {
       await _handleFetchTenders(event);
     } else if (event is FetchUserTendersEvent) {

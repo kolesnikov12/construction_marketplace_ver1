@@ -10,7 +10,7 @@ abstract class Bloc {
   StreamSink<BlocState> get _stateSink => _stateController.sink;
 
   Bloc() {
-    _eventController.stream.listen(_handleEvent);
+    _eventController.stream.listen(handleEvent);
     _stateSink.add(InitialState());
   }
 
@@ -25,7 +25,7 @@ abstract class Bloc {
     }
   }
 
-  void _handleEvent(BlocEvent event);
+  void handleEvent(BlocEvent event);
 
   void emitState(BlocState state) {
     if (!_stateController.isClosed) {
