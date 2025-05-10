@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../repositorties/tender_repository.dart';
+import '../repositorties/user_repository.dart';
 import 'base/bloc_base.dart';
 import 'base/bloc_events.dart';
 import 'base/bloc_states.dart';
@@ -8,6 +9,9 @@ import '../models/enums.dart';
 
 class TenderBloc extends Bloc {
   final TenderRepository _tenderRepository = TenderRepository();
+  final UserRepository _userRepository;
+
+  TenderBloc(this._userRepository);
 
   void handleEvent(BlocEvent event) async {
     if (event is FetchTendersEvent) {
