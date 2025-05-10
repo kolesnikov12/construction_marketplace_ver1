@@ -9,7 +9,7 @@ class ListingBloc extends Bloc {
   final ListingRepository _listingRepository = ListingRepository();
 
   @override
-  void handleEvent(BlocEvent event) async {
+  Future<void> handleEvent(BlocEvent event) async {
     if (event is FetchListingsEvent) {
       await _handleFetchListings(event);
     } else if (event is FetchUserListingsEvent) {

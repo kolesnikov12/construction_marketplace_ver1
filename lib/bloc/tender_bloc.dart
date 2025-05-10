@@ -13,7 +13,8 @@ class TenderBloc extends Bloc {
 
   TenderBloc(this._userRepository);
 
-  void handleEvent(BlocEvent event) async {
+  @override
+  Future<void> handleEvent(BlocEvent event) async {
     if (event is FetchTendersEvent) {
       await _handleFetchTenders(event);
     } else if (event is FetchUserTendersEvent) {
@@ -80,10 +81,13 @@ class TenderBloc extends Bloc {
   }
 
   Future<void> _handleCreateTender(CreateTenderEvent event) async {
+    print('Creating tender...');
+
     emitState(LoadingState());
 
     try {
       final userId = await _getCurrentUserId();
+      print('userId: $userId');
 
       final tender = await _tenderRepository.createTender(
         userId: userId,
@@ -96,9 +100,11 @@ class TenderBloc extends Bloc {
         itemsData: event.items,
         attachments: event.attachments,
       );
-
+      print('tender: $tender');
       emitState(TenderCreatedState(tender: tender));
-    } catch (e) {
+    } catch (e, stack) {
+      print('Create tender error: $e');
+      print(stack);
       emitState(ErrorState(message: e.toString()));
     }
   }
@@ -187,8 +193,6 @@ class TenderBloc extends Bloc {
 
   // Helper method to get current user ID
   Future<String> _getCurrentUserId() async {
-    // In a real app, you would get this from a user session or shared preferences
-    // For now, we'll simulate it with a placeholder
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getString('user_id');
     if (userId == null) {

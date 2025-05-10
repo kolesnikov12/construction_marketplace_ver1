@@ -25,11 +25,11 @@ abstract class Bloc {
     }
   }
 
-  void handleEvent(BlocEvent event);
-
   void emitState(BlocState state) {
     if (!_stateController.isClosed) {
       _stateSink.add(state);
     }
   }
+
+  Future<void> handleEvent(BlocEvent event);
 }

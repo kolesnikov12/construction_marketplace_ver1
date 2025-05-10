@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web/web.dart' as web;
 import 'package:jwt_decoder/jwt_decoder.dart';
 
@@ -141,6 +142,8 @@ class AuthProvider with ChangeNotifier {
       final expiryTimestamp = decodedToken['exp'] * 1000;
       _expiryDate = DateTime.fromMillisecondsSinceEpoch(expiryTimestamp);
 
+      await _saveUserData(authResult.token, authResult.user!.id);
+
       _status = AuthStatus.authenticated;
       _errorMessage = null;
       _autoLogout();
@@ -183,6 +186,8 @@ class AuthProvider with ChangeNotifier {
       }
       final expiryTimestamp = decodedToken['exp'] * 1000;
       _expiryDate = DateTime.fromMillisecondsSinceEpoch(expiryTimestamp);
+
+      await _saveUserData(authResult.token, authResult.user!.id);
 
       _status = AuthStatus.authenticated;
       _errorMessage = null;
@@ -378,6 +383,14 @@ class AuthProvider with ChangeNotifier {
     _authTimer = Timer(Duration(seconds: timeToExpiry - 60), () {
       refreshToken();
     });
+  }
+
+  Future<void> _saveUserData(String? token, String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (token != null) {
+      await prefs.setString('auth_token', token);
+      await prefs.setString('user_id', userId);
+    }
   }
 
   void clearErrors() {

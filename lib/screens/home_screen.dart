@@ -199,6 +199,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'home_screen',
         onPressed: _navigateToCreateScreen,
         tooltip: _tabController.index == 0
             ? localization.translate('create_tender')

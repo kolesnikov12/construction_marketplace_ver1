@@ -1,4 +1,6 @@
 import 'package:construction_marketplace/providers/auth_provider.dart';
+import 'package:construction_marketplace/providers/city_provider.dart';
+import 'package:construction_marketplace/providers/item_provider.dart';
 import 'package:construction_marketplace/providers/listing_provider.dart';
 import 'package:construction_marketplace/providers/tender_provider.dart';
 import 'package:construction_marketplace/widgets/auth_state_widget.dart';
@@ -44,8 +46,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
-        ChangeNotifierProvider(create: (_) => TenderProvider()),
         ChangeNotifierProvider(create: (_) => ListingProvider()),
+        ChangeNotifierProvider(create: (_) => TenderProvider()),
+        ChangeNotifierProvider(create: (_) => CityProvider()),
+        ChangeNotifierProvider(create: (_) => ItemProvider()),
       ],
       child: BlocProvider<AuthBloc>(
         create: () => AuthBloc(),
