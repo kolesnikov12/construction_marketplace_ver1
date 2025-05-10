@@ -2,13 +2,11 @@ import 'dart:async';
 import 'dart:io' as io;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../models/tender.dart';
 import '../models/tender_item.dart';
 import '../models/enums.dart';
-import 'package:web/web.dart' as web;
-import 'dart:typed_data' as typed_data;
-import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 
 class TenderRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -115,7 +113,7 @@ class TenderRepository {
 
       // Create tender items
       final items = itemsData.map((itemData) => TenderItem(
-        id: _uuid.v4(),
+        id: '',
         categoryId: itemData['categoryId'],
         subcategoryId: itemData['subcategoryId'],
         itemName: itemData['itemName'],
@@ -133,7 +131,7 @@ class TenderRepository {
 
       // Create tender object
       final tender = Tender(
-        id: _uuid.v4(), // Will be replaced by Firestore document ID
+        id: '',
         userId: userId,
         title: title,
         description: description,
@@ -146,6 +144,7 @@ class TenderRepository {
         items: items,
         attachmentUrls: attachmentUrls,
       );
+      print('Firestore payload: ${tender.toFirestore()}');
 
       // Save to Firestore
       final docRef = await _firestore.collection('tenders').add(tender.toFirestore());
