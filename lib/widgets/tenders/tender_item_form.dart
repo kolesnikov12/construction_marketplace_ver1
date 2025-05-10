@@ -1,9 +1,7 @@
 // lib/widgets/tenders/tender_item_form.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:construction_marketplace/providers/category_provider.dart';
-import 'package:construction_marketplace/providers/item_provider.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 
 class TenderItemForm extends StatefulWidget {
@@ -137,30 +135,14 @@ class _TenderItemFormState extends State<TenderItemForm> {
         ),
         SizedBox(height: 12),
 
-        // Item Name with Autocomplete
-        TypeAheadFormField(
-          textFieldConfiguration: TextFieldConfiguration(
-            controller: _itemNameController,
-            decoration: InputDecoration(
-              labelText: localization.translate('item_name') + ' *',
-              border: OutlineInputBorder(),
-            ),
-            onChanged: (value) {
-              _updateItemData();
-            },
+        // Item Name - Using a regular TextFormField instead of TypeAheadFormField
+        TextFormField(
+          controller: _itemNameController,
+          decoration: InputDecoration(
+            labelText: localization.translate('item_name') + ' *',
+            border: OutlineInputBorder(),
           ),
-          suggestionsCallback: (pattern) async {
-            if (_selectedCategoryId == null) return [];
-            return await Provider.of<ItemProvider>(context, listen: false)
-                .getSuggestions(pattern, _selectedCategoryId!, _selectedSubcategoryId);
-          },
-          itemBuilder: (context, suggestion) {
-            return ListTile(
-              title: Text(suggestion),
-            );
-          },
-          onSuggestionSelected: (suggestion) {
-            _itemNameController.text = suggestion;
+          onChanged: (value) {
             _updateItemData();
           },
           validator: (value) {
