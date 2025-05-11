@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' as io;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -340,28 +341,45 @@ class TenderRepository {
 
     for (var attachment in attachments) {
       try {
-        final String fileName = '${_uuid.v4()}_${attachment.path.split('/').last}';
-        final ref = _storage.ref().child('tenders/$userId/$fileName');
+        String fileName;
+        final ref = _storage.ref().child('tenders/$userId/');
 
         if (kIsWeb) {
-          // Simple web upload - no complex conversion
-          // This uses the Firebase Storage web API directly
-          final task = ref.putData(attachment);
-          await task.whenComplete(() => null);
+          // Для веб використовуємо bytes замість path
+          // Якщо attachment це результат FilePicker, беремо ім'я файлу з нього
+          if (attachment is PlatformFile) {
+            fileName = '${_uuid.v4()}_${attachment.name}';
+            final fileRef = ref.child(fileName);
+            final task = fileRef.putData(attachment.bytes!);
+            await task.whenComplete(() => null);
+            final url = await fileRef.getDownloadURL();
+            urls.add(url);
+          } else if (attachment is Uint8List) {
+            // Якщо це просто байти
+            fileName = '${_uuid.v4()}_file';
+            final fileRef = ref.child(fileName);
+            final task = fileRef.putData(attachment);
+            await task.whenComplete(() => null);
+            final url = await fileRef.getDownloadURL();
+            urls.add(url);
+          } else {
+            print('Unsupported file type for web platform');
+            continue;
+          }
         } else {
           // Mobile upload
-          // Fix: use proper type checking instead of casting
           if (attachment is io.File) {
-            final task = ref.putFile(attachment);
+            fileName = '${_uuid.v4()}_${attachment.path.split('/').last}';
+            final fileRef = ref.child(fileName);
+            final task = fileRef.putFile(attachment);
             await task.whenComplete(() => null);
+            final url = await fileRef.getDownloadURL();
+            urls.add(url);
           } else {
             print('Unsupported file type for mobile platform');
             continue;
           }
         }
-
-        final url = await ref.getDownloadURL();
-        urls.add(url);
       } catch (e) {
         print('Error uploading attachment: $e');
         // Continue with next attachment
@@ -370,7 +388,6 @@ class TenderRepository {
 
     return urls;
   }
-
 
 
   Future<void> _deleteAttachments(List<String> urls) async {
