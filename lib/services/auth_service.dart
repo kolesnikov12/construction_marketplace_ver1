@@ -59,6 +59,8 @@ class AuthService {
 
       final token = await fbUser.getIdToken();
 
+      await _saveToken(token, uid);
+
       return AuthResult(
         user: User.fromJson(userData),
         token: token,
@@ -95,9 +97,7 @@ class AuthService {
 
       final token = await fbUser.getIdToken();
 
-      await _firestore.collection('users').doc(fbUser.uid).update({
-        'lastLoginAt': DateTime.now().toIso8601String(),
-      });
+      await _saveToken(token, fbUser.uid);
 
       return AuthResult(
         user: User.fromJson(userData),
