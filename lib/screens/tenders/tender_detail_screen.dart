@@ -397,15 +397,15 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
                   if (_tender!.description != null && _tender!.description!.isNotEmpty) ...[
                     Text(
                       localization.translate('description'),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       _tender!.description!,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
                       ),
                     ),
@@ -416,7 +416,7 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
                   if (_tender!.attachmentUrls != null && _tender!.attachmentUrls!.isNotEmpty) ...[
                     Text(
                       localization.translate('attachments'),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
