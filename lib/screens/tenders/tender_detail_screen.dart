@@ -532,6 +532,10 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(localization.translate('tender_details')),
         actions: [
           IconButton(
@@ -546,6 +550,7 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
           ),
         ],
       ),
+
       drawer: AppDrawer(),
       body: SingleChildScrollView(
         child: Column(

@@ -122,6 +122,7 @@ class _ListingListScreenState extends State<ListingListScreen> {
 
     return Scaffold(
       appBar: widget.searchQuery.isEmpty ? AppBar(
+        automaticallyImplyLeading: false, // Add this line
         title: Text(localization.translate('listings')),
       ) : null,
       body: Column(

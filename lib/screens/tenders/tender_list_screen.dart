@@ -102,6 +102,7 @@ class _TenderListScreenState extends State<TenderListScreen> {
 
     return Scaffold(
       appBar: widget.searchQuery.isEmpty ? AppBar(
+        automaticallyImplyLeading: false, // Add this line
         title: Text(localization.translate('tenders')),
       ) : null,
       body: Column(

@@ -238,6 +238,10 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(localization.translate('listing_details')),
         actions: [
           IconButton(
