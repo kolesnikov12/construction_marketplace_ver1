@@ -1,12 +1,18 @@
-import 'dart:io' as web;
-
+import 'dart:io' as io;
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/listing.dart';
 import '../models/listing_item.dart';
 import '../models/enums.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+
+// Для веб
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class ListingRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -98,6 +104,7 @@ class ListingRepository {
     required List<dynamic> photos,
   }) async {
     try {
+      print('Створення оголошення для користувача: $userId');
       final now = DateTime.now();
       final validUntil = now.add(Duration(days: validWeeks * 7));
 
@@ -117,6 +124,7 @@ class ListingRepository {
 
       // Upload photos
       List<String> photoUrls = await _uploadPhotos(photos, userId);
+      print('Отримано URL фото: $photoUrls');
 
       // Create listing object
       final listing = Listing(
@@ -135,6 +143,7 @@ class ListingRepository {
 
       // Save to Firestore
       final docRef = await _firestore.collection('listings').add(listing.toFirestore());
+      print('Оголошення збережено з ID: ${docRef.id}');
 
       // Return listing with the correct Firestore ID
       return listing.copyWith(id: docRef.id);
@@ -302,33 +311,116 @@ class ListingRepository {
   }
 
   // Helper methods
-  // In _uploadPhotos method in listing_repository.dart
   Future<List<String>> _uploadPhotos(List<dynamic> photos, String userId) async {
     List<String> urls = [];
+    print('Початок завантаження фото. Кількість: ${photos.length}, ID користувача: $userId');
 
-    for (var photo in photos) {
+    // Перевіряємо автентифікацію поточного користувача
+    final auth = firebase_auth.FirebaseAuth.instance;
+    if (auth.currentUser == null) {
+      print('Помилка: Користувач не автентифікований');
+      throw Exception('Користувач не автентифікований для завантаження фото');
+    }
+
+    // Отримуємо свіжий токен
+    try {
+      final idToken = await auth.currentUser!.getIdToken(true);
+      print('Токен оновлено успішно: ${idToken?.substring(0, 10) ?? "null"}...');
+    } catch (e) {
+      print('Помилка оновлення токена: $e');
+      // Продовжуємо все одно, можливо, існуючий токен все ще дійсний
+    }
+
+    for (int i = 0; i < photos.length; i++) {
+      var photo = photos[i];
       try {
-        final String fileName = '${_uuid.v4()}_${photo.path.split('/').last}';
-        final ref = _storage.ref().child('listings/$userId/$fileName');
+        print('Обробка фото $i. Тип: ${photo.runtimeType}');
 
-        if (kIsWeb) {
-          // For web platform - simple direct upload
-          final task = ref.putBlob(photo);
-          await task.whenComplete(() => null);
-        } else {
-          // For mobile platforms
-          final task = ref.putFile(photo);
-          await task.whenComplete(() => null);
+        // Створюємо унікальне ім'я файлу
+        String fileName = '${_uuid.v4()}_${DateTime.now().millisecondsSinceEpoch}';
+
+        if (photo is XFile) {
+          fileName = '${_uuid.v4()}_${photo.name}';
         }
 
-        final url = await ref.getDownloadURL();
-        urls.add(url);
+        final storageRef = _storage.ref().child('listings/$userId/$fileName');
+        print('Створено посилання на сховище: ${storageRef.fullPath}');
+
+        UploadTask? uploadTask;
+
+        if (kIsWeb) {
+          print('Веб-платформа: підготовка фото для завантаження');
+
+          Uint8List bytes;
+          if (photo is XFile) {
+            bytes = await photo.readAsBytes();
+            print('Прочитано ${bytes.length} байт з XFile');
+          } else if (photo is List<int>) {
+            bytes = Uint8List.fromList(photo);
+            print('Сконвертовано List<int> у Uint8List');
+          } else {
+            // Спроба отримати bytes з інших типів
+            throw Exception('Непідтримуваний тип файлу для веб: ${photo.runtimeType}');
+          }
+
+          // Встановлюємо метадані для файлу
+          final metadata = SettableMetadata(
+              contentType: 'image/jpeg',
+              customMetadata: {'uploadedBy': userId}
+          );
+
+          // Завантажуємо файл
+          print('Запуск завантаження через putData');
+          uploadTask = storageRef.putData(bytes, metadata);
+        } else {
+          // Мобільна платформа
+          print('Мобільна платформа: завантаження файлу');
+          if (photo is XFile) {
+            final file = io.File(photo.path);
+            uploadTask = storageRef.putFile(file);
+          } else if (photo is io.File) {
+            uploadTask = storageRef.putFile(photo);
+          } else {
+            throw Exception('Непідтримуваний тип файлу для мобільної платформи: ${photo.runtimeType}');
+          }
+        }
+
+        // Чекаємо завершення завантаження
+        if (uploadTask != null) {
+          uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+            final progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            print('Прогрес завантаження: $progress%');
+          }, onError: (e) {
+            print('Помилка під час моніторингу завантаження: $e');
+          });
+
+          // Чекаємо завершення завантаження та обробляємо помилки
+          try {
+            await uploadTask;
+            print('Завантаження успішно завершено');
+
+            // Отримуємо URL
+            final url = await storageRef.getDownloadURL();
+            print('Отримано URL: $url');
+            urls.add(url);
+          } catch (e) {
+            print('Помилка під час завантаження: $e');
+            if (e is FirebaseException) {
+              if (e.code == 'unauthorized') {
+                print('Деталі помилки unauthorized: ${e.message}');
+                // Можливо, потрібно оновити права в Firebase Storage Rules
+              }
+            }
+            throw e;  // Передаємо помилку далі
+          }
+        }
       } catch (e) {
-        print('Error uploading photo: $e');
-        // Continue with next photo
+        print('Помилка завантаження фото $i: $e');
+        // Продовжуємо з іншими фото, якщо одне не вдалося завантажити
       }
     }
 
+    print('Завантаження фото завершено. Успішно завантажено: ${urls.length} фото');
     return urls;
   }
 

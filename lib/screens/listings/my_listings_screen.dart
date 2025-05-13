@@ -80,13 +80,17 @@ class _MyListingsScreenState extends State<MyListingsScreen>
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child:
-                Text(AppLocalizations.of(context)!.translate('mark_as_sold')),
+            Text(AppLocalizations.of(context)!.translate('mark_as_sold')),
           ),
         ],
       ),
     );
 
     if (confirmed == true) {
+      setState(() {
+        _isLoading = true;
+      });
+
       try {
         await Provider.of<ListingProvider>(context, listen: false)
             .markListingAsSold(listingId);
@@ -105,6 +109,10 @@ class _MyListingsScreenState extends State<MyListingsScreen>
             backgroundColor: Colors.red,
           ),
         );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -131,6 +139,10 @@ class _MyListingsScreenState extends State<MyListingsScreen>
     );
 
     if (confirmed == true) {
+      setState(() {
+        _isLoading = true;
+      });
+
       try {
         await Provider.of<ListingProvider>(context, listen: false)
             .deleteListing(listingId);
@@ -149,13 +161,17 @@ class _MyListingsScreenState extends State<MyListingsScreen>
             backgroundColor: Colors.red,
           ),
         );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
 
   Widget _buildListingGrid(List<Listing> listings, ListingStatus status) {
     final filteredListings =
-        listings.where((listing) => listing.status == status).toList();
+    listings.where((listing) => listing.status == status).toList();
 
     if (filteredListings.isEmpty) {
       return Center(
@@ -193,7 +209,10 @@ class _MyListingsScreenState extends State<MyListingsScreen>
             Navigator.of(context).pushNamed(
               ListingDetailScreen.routeName,
               arguments: listing.id,
-            );
+            ).then((_) {
+              // Refresh the listings when returning from detail screen
+              _loadUserListings();
+            });
           },
           actionBuilder: (BuildContext context) {
             return Row(
@@ -203,7 +222,7 @@ class _MyListingsScreenState extends State<MyListingsScreen>
                   IconButton(
                     icon: Icon(Icons.check_circle_outline),
                     tooltip:
-                        AppLocalizations.of(context)!.translate('mark_as_sold'),
+                    AppLocalizations.of(context)!.translate('mark_as_sold'),
                     onPressed: () => _markListingAsSold(listing.id),
                   ),
                 IconButton(
@@ -241,19 +260,23 @@ class _MyListingsScreenState extends State<MyListingsScreen>
         body: _isLoading
             ? Center(child: CircularProgressIndicator())
             : RefreshIndicator(
-                onRefresh: _loadUserListings,
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildListingGrid(userListings, ListingStatus.available),
-                    _buildListingGrid(userListings, ListingStatus.sold),
-                    _buildListingGrid(userListings, ListingStatus.expired),
-                  ],
-                ),
-              ),
+          onRefresh: _loadUserListings,
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildListingGrid(userListings, ListingStatus.available),
+              _buildListingGrid(userListings, ListingStatus.sold),
+              _buildListingGrid(userListings, ListingStatus.expired),
+            ],
+          ),
+        ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            Navigator.of(context).pushNamed(CreateListingScreen.routeName);
+            Navigator.of(context).pushNamed(CreateListingScreen.routeName)
+                .then((_) {
+              // Refresh listings when returning from create screen
+              _loadUserListings();
+            });
           },
           child: Icon(Icons.add),
           tooltip: localization.translate('create_listing'),

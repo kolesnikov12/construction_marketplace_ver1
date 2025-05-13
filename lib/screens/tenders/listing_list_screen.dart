@@ -26,6 +26,7 @@ class _ListingListScreenState extends State<ListingListScreen> {
   String? _selectedCategoryId;
   bool _showUnviewed = false;
   List<String> _selectedDeliveryOptions = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -42,15 +43,34 @@ class _ListingListScreenState extends State<ListingListScreen> {
   }
 
   Future<void> _loadListings() async {
-    await Provider.of<ListingProvider>(context, listen: false).fetchListings(
-      searchQuery: widget.searchQuery,
-      city: _selectedCity,
-      categoryId: _selectedCategoryId,
-      unviewed: _showUnviewed,
-      deliveryOptions: _selectedDeliveryOptions.isNotEmpty
-          ? _selectedDeliveryOptions
-          : null,
-    );
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await Provider.of<ListingProvider>(context, listen: false).fetchListings(
+        searchQuery: widget.searchQuery,
+        city: _selectedCity,
+        categoryId: _selectedCategoryId,
+        unviewed: _showUnviewed,
+        deliveryOptions: _selectedDeliveryOptions.isNotEmpty
+            ? _selectedDeliveryOptions
+            : null,
+      );
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${error.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _openFilterDialog() async {
@@ -210,7 +230,9 @@ class _ListingListScreenState extends State<ListingListScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: _loadListings,
-              child: listings.isEmpty
+              child: _isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : listings.isEmpty
                   ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,

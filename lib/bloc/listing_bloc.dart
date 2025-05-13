@@ -78,6 +78,12 @@ class ListingBloc extends Bloc {
 
     try {
       final userId = await _getCurrentUserId();
+      print('Створення оголошення для користувача: $userId');
+
+      if (userId.isEmpty) {
+        throw Exception(
+            'Недійсний ID користувача. Будь ласка, увійдіть знову.');
+      }
 
       final listing = await _listingRepository.createListing(
         userId: userId,
@@ -92,6 +98,7 @@ class ListingBloc extends Bloc {
 
       emitState(ListingCreatedState(listing: listing));
     } catch (e) {
+      print('Помилка створення оголошення: $e');
       emitState(ErrorState(message: e.toString()));
     }
   }
@@ -169,9 +176,11 @@ class ListingBloc extends Bloc {
   Future<String> _getCurrentUserId() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getString('user_id');
-    if (userId == null) {
-      throw Exception('User not authenticated');
+    if (userId == null || userId.isEmpty) {
+      print('ID користувача не знайдено в SharedPreferences');
+      throw Exception('Користувач не автентифікований');
     }
+    print('Отримано ID користувача: $userId');
     return userId;
   }
 }

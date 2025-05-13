@@ -1,4 +1,3 @@
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -22,7 +21,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   bool _isLoading = true;
   Listing? _listing;
   int _currentImageIndex = 0;
-  final CarouselSliderController _carouselController = CarouselSliderController();
+  final CarouselController _carouselController = CarouselController();
 
   @override
   void didChangeDependencies() {
@@ -35,10 +34,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
       _isLoading = true;
     });
 
-    final listingId = ModalRoute
-        .of(context)!
-        .settings
-        .arguments as String;
+    final listingId = ModalRoute.of(context)!.settings.arguments as String;
 
     try {
       final listing = await Provider.of<ListingProvider>(context, listen: false)
@@ -178,10 +174,15 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     final localization = AppLocalizations.of(context)!;
     final listingProvider = Provider.of<ListingProvider>(context);
     final categoryProvider = Provider.of<CategoryProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
 
     // Check if listing is a favorite
     final isFavorite = _listing != null &&
         listingProvider.favoriteListings.any((item) => item.id == _listing!.id);
+
+    // Check if user is the listing creator
+    final isCreator = _listing != null && authProvider.user != null &&
+        _listing!.userId == authProvider.user!.id;
 
     // Format currency
     final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
@@ -252,360 +253,317 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
         ],
       ),
       drawer: AppDrawer(),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image Carousel
-            if (_listing!.photoUrls != null && _listing!.photoUrls!.isNotEmpty)
-              Stack(
-                children: [
-                  // Carousel
-                  CarouselSlider(
-                    carouselController: _carouselController,
-                    options: CarouselOptions(
+      body: RefreshIndicator(
+        onRefresh: _loadListing,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image Carousel
+              if (_listing!.photoUrls != null && _listing!.photoUrls!.isNotEmpty)
+                Stack(
+                  children: [
+                    // Carousel
+                    Container(
                       height: 250,
-                      viewportFraction: 1.0,
-                      enlargeCenterPage: false,
-                      onPageChanged: (index, reason) {
-                        setState(() {
-                          _currentImageIndex = index;
-                        });
-                      },
-                    ),
-                    items: _listing!.photoUrls!.map((url) {
-                      return Builder(
-                        builder: (BuildContext context) {
-                          return Container(
-                            width: MediaQuery
-                                .of(context)
-                                .size
-                                .width,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                            ),
-                            child: Image.network(
-                              url,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Center(
-                                  child: Icon(Icons.broken_image, size: 64),
-                                );
-                              },
-                            ),
+                      width: double.infinity,
+                      child: PageView.builder(
+                        itemCount: _listing!.photoUrls!.length,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _currentImageIndex = index;
+                          });
+                        },
+                        itemBuilder: (context, index) {
+                          return Image.network(
+                            _listing!.photoUrls![index],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(
+                                child: Icon(Icons.broken_image, size: 64),
+                              );
+                            },
                           );
                         },
-                      );
-                    }).toList(),
-                  ),
-
-                  // Navigation arrows
-                  Positioned(
-                    left: 10,
-                    top: 0,
-                    bottom: 0,
-                    child: GestureDetector(
-                      onTap: () {
-                        _carouselController.previousPage();
-                      },
-                      child: Container(
-                        color: Colors.transparent,
-                        padding: EdgeInsets.all(8),
-                        child: Icon(
-                            Icons.arrow_back_ios, color: Colors.white70),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    right: 10,
-                    top: 0,
-                    bottom: 0,
-                    child: GestureDetector(
-                      onTap: () {
-                        _carouselController.nextPage();
-                      },
-                      child: Container(
-                        color: Colors.transparent,
-                        padding: EdgeInsets.all(8),
-                        child: Icon(
-                            Icons.arrow_forward_ios, color: Colors.white70),
-                      ),
-                    ),
-                  ),
 
-                  // Indicator dots
-                  if (_listing!.photoUrls!.length > 1)
+                    // Navigation arrows
                     Positioned(
-                      bottom: 10,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: _listing!.photoUrls!.asMap().entries.map((
-                            entry) {
-                          return Container(
-                            width: 8.0,
-                            height: 8.0,
-                            margin: const EdgeInsets.symmetric(horizontal: 4.0),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _currentImageIndex == entry.key
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.5),
-                            ),
-                          );
-                        }).toList(),
+                      left: 10,
+                      top: 0,
+                      bottom: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          final newIndex = _currentImageIndex > 0
+                              ? _currentImageIndex - 1
+                              : _listing!.photoUrls!.length - 1;
+                          setState(() {
+                            _currentImageIndex = newIndex;
+                          });
+                        },
+                        child: Container(
+                          color: Colors.transparent,
+                          padding: EdgeInsets.all(8),
+                          child: Icon(
+                              Icons.arrow_back_ios, color: Colors.white70),
+                        ),
                       ),
                     ),
-                ],
-              )
-            else
+                    Positioned(
+                      right: 10,
+                      top: 0,
+                      bottom: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          final newIndex = _currentImageIndex < _listing!.photoUrls!.length - 1
+                              ? _currentImageIndex + 1
+                              : 0;
+                          setState(() {
+                            _currentImageIndex = newIndex;
+                          });
+                        },
+                        child: Container(
+                          color: Colors.transparent,
+                          padding: EdgeInsets.all(8),
+                          child: Icon(
+                              Icons.arrow_forward_ios, color: Colors.white70),
+                        ),
+                      ),
+                    ),
+
+                    // Indicator dots
+                    if (_listing!.photoUrls!.length > 1)
+                      Positioned(
+                        bottom: 10,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: _listing!.photoUrls!.asMap().entries.map((
+                              entry) {
+                            return Container(
+                              width: 8.0,
+                              height: 8.0,
+                              margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _currentImageIndex == entry.key
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.5),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                  ],
+                )
+              else
+                Container(
+                  height: 200,
+                  color: Colors.grey[300],
+                  child: const Center(
+                    child: Icon(
+                        Icons.image_not_supported, size: 64, color: Colors.grey),
+                  ),
+                ),
+
+              // Status Badge
               Container(
-                height: 200,
-                color: Colors.grey[300],
-                child: const Center(
-                  child: Icon(
-                      Icons.image_not_supported, size: 64, color: Colors.grey),
+                padding: EdgeInsets.symmetric(vertical: 8),
+                color: statusColor.withOpacity(0.1),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _listing!.status == ListingStatus.available
+                          ? Icons.check_circle
+                          : (_listing!.status == ListingStatus.sold
+                          ? Icons.shopping_cart
+                          : Icons.access_time),
+                      color: statusColor,
+                      size: 16,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      statusMessage,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (_listing!.status == ListingStatus.available) ...[
+                      Text(
+                        ' • ${localization.translate(
+                            'valid_until')} ${dateFormatter.format(
+                            _listing!.validUntil)}',
+                        style: TextStyle(
+                          color: statusColor,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
 
-            // Status Badge
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              color: statusColor.withOpacity(0.1),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    _listing!.status == ListingStatus.available
-                        ? Icons.check_circle
-                        : (_listing!.status == ListingStatus.sold
-                        ? Icons.shopping_cart
-                        : Icons.access_time),
-                    color: statusColor,
-                    size: 16,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    statusMessage,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (_listing!.status == ListingStatus.available) ...[
+              // Title & Details
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
                     Text(
-                      ' • ${localization.translate(
-                          'valid_until')} ${dateFormatter.format(
-                          _listing!.validUntil)}',
-                      style: TextStyle(
-                        color: statusColor,
+                      _listing!.title,
+                      style: Theme
+                          .of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
-                ],
-              ),
-            ),
 
-            // Title & Details
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(
-                    _listing!.title,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .headlineSmall
-                        ?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    SizedBox(height: 8),
+
+                    // Location
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, size: 16, color: Colors.grey),
+                        SizedBox(width: 4),
+                        Text(
+                          _listing!.city,
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
 
-                  SizedBox(height: 8),
+                    SizedBox(height: 4),
 
-                  // Location
-                  Row(
-                    children: [
-                      Icon(Icons.location_on, size: 16, color: Colors.grey),
-                      SizedBox(width: 4),
+                    // Delivery
+                    Row(
+                      children: [
+                        Icon(
+                          _listing!.deliveryOption == DeliveryOption.pickup
+                              ? Icons.store
+                              : (_listing!.deliveryOption ==
+                              DeliveryOption.delivery
+                              ? Icons.local_shipping
+                              : Icons.question_answer),
+                          size: 16,
+                          color: Colors.grey,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          _listing!.deliveryOption == DeliveryOption.pickup
+                              ? localization.translate('pickup_only')
+                              : (_listing!.deliveryOption ==
+                              DeliveryOption.delivery
+                              ? localization.translate('can_ship')
+                              : localization.translate('requires_discussion')),
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 16),
+
+                    // Description (if available)
+                    if (_listing!.description != null &&
+                        _listing!.description!.isNotEmpty) ...[
                       Text(
-                        _listing!.city,
+                        localization.translate('description'),
                         style: TextStyle(
-                          color: Colors.grey[700],
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
                         ),
                       ),
-                    ],
-                  ),
-
-                  SizedBox(height: 4),
-
-                  // Delivery
-                  Row(
-                    children: [
-                      Icon(
-                        _listing!.deliveryOption == DeliveryOption.pickup
-                            ? Icons.store
-                            : (_listing!.deliveryOption ==
-                            DeliveryOption.delivery
-                            ? Icons.local_shipping
-                            : Icons.question_answer),
-                        size: 16,
-                        color: Colors.grey,
-                      ),
-                      SizedBox(width: 4),
+                      SizedBox(height: 8),
                       Text(
-                        _listing!.deliveryOption == DeliveryOption.pickup
-                            ? localization.translate('pickup_only')
-                            : (_listing!.deliveryOption ==
-                            DeliveryOption.delivery
-                            ? localization.translate('can_ship')
-                            : localization.translate('requires_discussion')),
+                        _listing!.description!,
                         style: TextStyle(
-                          color: Colors.grey[700],
+                          fontSize: 16,
                         ),
                       ),
+                      SizedBox(height: 24),
                     ],
-                  ),
 
-                  SizedBox(height: 16),
-
-                  // Description (if available)
-                  if (_listing!.description != null &&
-                      _listing!.description!.isNotEmpty) ...[
+                    // Items
                     Text(
-                      localization.translate('description'),
+                      localization.translate('items'),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
                     ),
                     SizedBox(height: 8),
-                    Text(
-                      _listing!.description!,
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
-                    SizedBox(height: 24),
-                  ],
 
-                  // Items
-                  Text(
-                    localization.translate('items'),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-
-                  // Items List
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: _listing!.items.length,
-                    itemBuilder: (ctx, index) {
-                      final item = _listing!.items[index];
-                      final categoryName = categoryProvider.getCategoryName(
-                        item.categoryId,
-                        localization.isEnglish(),
-                      );
-                      String? subcategoryName;
-                      if (item.subcategoryId != null) {
-                        subcategoryName = categoryProvider.getCategoryName(
-                          item.subcategoryId!,
+                    // Items List
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: _listing!.items.length,
+                      itemBuilder: (ctx, index) {
+                        final item = _listing!.items[index];
+                        final categoryName = categoryProvider.getCategoryName(
+                          item.categoryId,
                           localization.isEnglish(),
                         );
-                      }
+                        String? subcategoryName;
+                        if (item.subcategoryId != null) {
+                          subcategoryName = categoryProvider.getCategoryName(
+                            item.subcategoryId!,
+                            localization.isEnglish(),
+                          );
+                        }
 
-                      return Card(
-                        margin: EdgeInsets.only(bottom: 8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Item Name
-                              Text(
-                                item.itemName,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-
-                              SizedBox(height: 8),
-
-                              // Price
-                              Text(
-                                item.isFree
-                                    ? localization.translate('free')
-                                    : formatter.format(item.price),
-                                style: TextStyle(
-                                  color: item.isFree ? Colors.green : Colors
-                                      .blue[800],
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-
-                              SizedBox(height: 8),
-
-                              // Category & Subcategory
-                              Row(
-                                children: [
-                                  Icon(Icons.category, size: 14,
-                                      color: Colors.grey),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    subcategoryName != null
-                                        ? '$categoryName > $subcategoryName'
-                                        : categoryName,
-                                    style: TextStyle(
-                                      color: Colors.grey[700],
-                                      fontSize: 14,
-                                    ),
+                        return Card(
+                          margin: EdgeInsets.only(bottom: 8),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Item Name
+                                Text(
+                                  item.itemName,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
                                   ),
-                                ],
-                              ),
+                                ),
 
-                              SizedBox(height: 4),
+                                SizedBox(height: 8),
 
-                              // Quantity & Unit
-                              Row(
-                                children: [
-                                  Icon(Icons.format_list_numbered, size: 14,
-                                      color: Colors.grey),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    '${item.quantity} ${localization.translate(
-                                        'unit_${item.unit}')}',
-                                    style: TextStyle(
-                                      color: Colors.grey[700],
-                                      fontSize: 14,
-                                    ),
+                                // Price
+                                Text(
+                                  item.isFree
+                                      ? localization.translate('free')
+                                      : formatter.format(item.price),
+                                  style: TextStyle(
+                                    color: item.isFree ? Colors.green : Colors
+                                        .blue[800],
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
                                   ),
-                                ],
-                              ),
+                                ),
 
-                              // Manufacturer & Model (if available)
-                              if (item.manufacturer != null &&
-                                  item.manufacturer!.isNotEmpty) ...[
-                                SizedBox(height: 4),
+                                SizedBox(height: 8),
+
+                                // Category & Subcategory
                                 Row(
                                   children: [
-                                    Icon(Icons.business, size: 14,
+                                    Icon(Icons.category, size: 14,
                                         color: Colors.grey),
                                     SizedBox(width: 4),
                                     Text(
-                                      '${item.manufacturer}${item.model !=
-                                          null && item.model!.isNotEmpty
-                                          ? ' - ${item.model}'
-                                          : ''}',
+                                      subcategoryName != null
+                                          ? '$categoryName > $subcategoryName'
+                                          : categoryName,
                                       style: TextStyle(
                                         color: Colors.grey[700],
                                         fontSize: 14,
@@ -613,20 +571,62 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                     ),
                                   ],
                                 ),
+
+                                SizedBox(height: 4),
+
+                                // Quantity & Unit
+                                Row(
+                                  children: [
+                                    Icon(Icons.format_list_numbered, size: 14,
+                                        color: Colors.grey),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      '${item.quantity} ${localization.translate(
+                                          'unit_${item.unit}')}',
+                                      style: TextStyle(
+                                        color: Colors.grey[700],
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // Manufacturer & Model (if available)
+                                if (item.manufacturer != null &&
+                                    item.manufacturer!.isNotEmpty) ...[
+                                  SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.business, size: 14,
+                                          color: Colors.grey),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        '${item.manufacturer}${item.model !=
+                                            null && item.model!.isNotEmpty
+                                            ? ' - ${item.model}'
+                                            : ''}',
+                                        style: TextStyle(
+                                          color: Colors.grey[700],
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-      bottomNavigationBar: _listing!.status == ListingStatus.available
+      bottomNavigationBar: !isCreator && _listing!.status == ListingStatus.available
           ? BottomAppBar(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -642,4 +642,10 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
           : null,
     );
   }
+}
+
+// A simple CarouselController to maintain compatibility with the code
+class CarouselController {
+  void previousPage() {}
+  void nextPage() {}
 }

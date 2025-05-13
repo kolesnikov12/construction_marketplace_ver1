@@ -1,8 +1,11 @@
-import 'dart:io';
+
+import 'dart:io' as io;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'dart:typed_data';
 
 import '../../bloc/bloc_provider.dart';
 import '../../bloc/listing_bloc.dart';
@@ -13,6 +16,21 @@ import '../../models/enums.dart';
 import '../../utils/l10n/app_localizations.dart';
 import '../../widgets/app_drawer.dart';
 import 'listing_item_form.dart';
+
+// A class to handle both web and mobile files
+class PlatformFile {
+  final dynamic file; // io.File for mobile, XFile or html.File for web
+  final Uint8List? bytes; // For web preview
+  final String name;
+  final String path;
+
+  PlatformFile({
+    required this.file,
+    this.bytes,
+    required this.name,
+    required this.path,
+  });
+}
 
 class CreateListingScreen extends StatefulWidget {
   static const routeName = '/create-listing';
@@ -31,7 +49,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   String? _errorMessage;
   DeliveryOption _deliveryOption = DeliveryOption.pickup;
   int _validWeeks = 1;
-  List<File> _selectedPhotos = [];
+  List<PlatformFile> _selectedPhotos = [];
   List<Map<String, dynamic>> _items = [{}];
 
   final ImagePicker _picker = ImagePicker();
@@ -70,17 +88,28 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
     // Add event to BLoC
     final listingBloc = BlocProvider.of<ListingBloc>(context);
-    listingBloc.addEvent(CreateListingEvent(
-      title: _titleController.text.trim(),
-      city: _cityController.text.trim(),
-      deliveryOption: deliveryOptionToString(_deliveryOption),
-      validWeeks: _validWeeks,
-      description: _descriptionController.text.trim().isEmpty
-          ? null
-          : _descriptionController.text.trim(),
-      items: _items,
-      photos: _selectedPhotos,
-    ));
+
+    try {
+      listingBloc.addEvent(CreateListingEvent(
+        title: _titleController.text.trim(),
+        city: _cityController.text.trim(),
+        deliveryOption: deliveryOptionToString(_deliveryOption),
+        validWeeks: _validWeeks,
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        items: _items,
+        photos: _selectedPhotos.map((pf) => pf.file).toList(),
+      ));
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
   }
 
   bool _isItemValid(Map<String, dynamic> item) {
@@ -131,9 +160,30 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           );
           return;
         }
-        setState(() {
-          _selectedPhotos.addAll(pickedImages.map((xfile) => File(xfile.path)));
-        });
+
+        for (var xFile in pickedImages) {
+          if (kIsWeb) {
+            // Web handling
+            final bytes = await xFile.readAsBytes();
+            setState(() {
+              _selectedPhotos.add(PlatformFile(
+                file: xFile,
+                bytes: bytes,
+                name: xFile.name,
+                path: xFile.path,
+              ));
+            });
+          } else {
+            // Mobile handling
+            setState(() {
+              _selectedPhotos.add(PlatformFile(
+                file: io.File(xFile.path),
+                name: xFile.name,
+                path: xFile.path,
+              ));
+            });
+          }
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -152,9 +202,28 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           );
           return;
         }
-        setState(() {
-          _selectedPhotos.add(File(photo.path));
-        });
+
+        if (kIsWeb) {
+          // Web handling
+          final bytes = await photo.readAsBytes();
+          setState(() {
+            _selectedPhotos.add(PlatformFile(
+              file: photo,
+              bytes: bytes,
+              name: photo.name,
+              path: photo.path,
+            ));
+          });
+        } else {
+          // Mobile handling
+          setState(() {
+            _selectedPhotos.add(PlatformFile(
+              file: io.File(photo.path),
+              name: photo.name,
+              path: photo.path,
+            ));
+          });
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -167,6 +236,25 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     setState(() {
       _selectedPhotos.removeAt(index);
     });
+  }
+
+  Widget _buildPhotoPreview(PlatformFile platformFile, int index) {
+    if (kIsWeb) {
+      if (platformFile.bytes != null) {
+        return Image.memory(
+          platformFile.bytes!,
+          fit: BoxFit.cover,
+        );
+      } else {
+        // Fallback if bytes are not available
+        return Center(child: Icon(Icons.image, size: 40));
+      }
+    } else {
+      return Image.file(
+        platformFile.file as io.File,
+        fit: BoxFit.cover,
+      );
+    }
   }
 
   @override
@@ -318,6 +406,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                             scrollDirection: Axis.horizontal,
                             itemCount: _selectedPhotos.length,
                             itemBuilder: (ctx, index) {
+                              final platformFile = _selectedPhotos[index];
                               return Stack(
                                 children: [
                                   Container(
@@ -330,10 +419,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                                     ),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
-                                      child: Image.file(
-                                        _selectedPhotos[index],
-                                        fit: BoxFit.cover,
-                                      ),
+                                      child: _buildPhotoPreview(platformFile, index),
                                     ),
                                   ),
                                   Positioned(
