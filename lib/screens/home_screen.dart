@@ -96,13 +96,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
   }
 
-  void _navigateToCreateScreen() {
+  void _navigateToCreateScreen() async {
     if (_tabController.index == 0) {
-      // Navigate to create tender screen
-      Navigator.of(context).pushNamed(CreateTenderScreen.routeName);
+      // Navigate to create tender screen and wait for result
+      final result = await Navigator.of(context).pushNamed(CreateTenderScreen.routeName);
+
+      // If tender was created successfully, refresh the data
+      if (result == true) {
+        _refreshData();
+      }
     } else {
       // Navigate to create listing screen
-      Navigator.of(context).pushNamed(CreateListingScreen.routeName);
+      final result = await Navigator.of(context).pushNamed(CreateListingScreen.routeName);
+
+      // If listing was created successfully, refresh the data
+      if (result == true) {
+        _refreshData();
+      }
     }
   }
 

@@ -274,9 +274,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             final state = snapshot.data;
 
             if (state is ListingCreatedState) {
-              // Navigate back on successful creation
+              // Navigate back on successful creation with a result to trigger refresh
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(true); // Return true to indicate successful creation
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(localization.translate('listing_created_successfully')),

@@ -247,13 +247,12 @@ class _CreateTenderScreenState extends State<CreateTenderScreen> {
             final state = snapshot.data;
 
             if (state is TenderCreatedState) {
-              // Navigate back on successful creation
+              // Navigate back on successful creation with a result to trigger refresh
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(true); // Return true to indicate successful creation
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(
-                        localization.translate('tender_created_successfully')),
+                    content: Text(localization.translate('tender_created_successfully')),
                     backgroundColor: Colors.green,
                   ),
                 );

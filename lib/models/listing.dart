@@ -29,7 +29,6 @@ class Listing {
     this.photoUrls,
   });
 
-  // Add this method to your Listing class in lib/models/listing.dart
   Listing copyWith({
     String? id,
     String? userId,
@@ -60,33 +59,39 @@ class Listing {
 
   factory Listing.fromJson(Map<String, dynamic> json) {
     return Listing(
-      id: json['id'],
-      userId: json['userId'],
-      title: json['title'],
+      id: json['id'] ?? '',
+      userId: json['userId'] ?? '',
+      title: json['title'] ?? '',
       description: json['description'],
-      city: json['city'],
+      city: json['city'] ?? '',
       deliveryOption: json['deliveryOption'] is String
           ? stringToDeliveryOption(json['deliveryOption'])
           : DeliveryOption.values[json['deliveryOption'] ?? 0],
       validUntil: json['validUntil'] is Timestamp
           ? (json['validUntil'] as Timestamp).toDate()
-          : DateTime.parse(json['validUntil']),
+          : (json['validUntil'] is String
+          ? DateTime.parse(json['validUntil'])
+          : DateTime.now()),
       status: json['status'] is String
           ? stringToListingStatus(json['status'])
           : ListingStatus.values[json['status'] ?? 0],
       createdAt: json['createdAt'] is Timestamp
           ? (json['createdAt'] as Timestamp).toDate()
-          : DateTime.parse(json['createdAt']),
+          : (json['createdAt'] is String
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now()),
       items: (json['items'] as List?)
           ?.map((i) => ListingItem.fromJson(i))
-          ?.toList() ?? [],
+          .toList() ??
+          [],
       photoUrls: (json['photoUrls'] as List?)?.cast<String>(),
     );
   }
 
   factory Listing.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    data['id'] = doc.id; // Ensure the ID is in the data
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    // Додаємо ID документа до даних
+    data['id'] = doc.id;
     return Listing.fromJson(data);
   }
 
@@ -107,10 +112,9 @@ class Listing {
 
   Map<String, dynamic> toFirestore() {
     final json = toJson();
-    // Convert DateTime objects to Firestore Timestamps
+    // Перетворюємо DateTime в Timestamp для Firestore
     json['validUntil'] = Timestamp.fromDate(validUntil);
     json['createdAt'] = Timestamp.fromDate(createdAt);
-    // Remove ID as it will be the document ID
     return json;
   }
 }
