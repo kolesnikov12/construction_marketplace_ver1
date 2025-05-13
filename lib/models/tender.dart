@@ -30,7 +30,8 @@ class Tender {
     required this.items,
     this.attachmentUrls,
   });
-  // Add this method to your Tender class in lib/models/tender.dart
+
+  // Метод для копіювання об'єкта з можливістю зміни окремих полів
   Tender copyWith({
     String? id,
     String? userId,
@@ -61,41 +62,49 @@ class Tender {
     );
   }
 
+  // Фабричний метод для створення об'єкта з JSON
   factory Tender.fromJson(Map<String, dynamic> json) {
     return Tender(
-      id: json['id'],
-      userId: json['userId'],
-      title: json['title'],
+      id: json['id'] ?? '',
+      userId: json['userId'] ?? '',
+      title: json['title'] ?? '',
       description: json['description'],
-      city: json['city'],
+      city: json['city'] ?? '',
       budget: (json['budget'] is int)
           ? (json['budget'] as int).toDouble()
-          : json['budget'],
+          : (json['budget'] ?? 0.0),
       deliveryOption: json['deliveryOption'] is String
           ? stringToDeliveryOption(json['deliveryOption'])
           : DeliveryOption.values[json['deliveryOption'] ?? 0],
       validUntil: json['validUntil'] is Timestamp
           ? (json['validUntil'] as Timestamp).toDate()
-          : DateTime.parse(json['validUntil']),
+          : (json['validUntil'] is String
+          ? DateTime.parse(json['validUntil'])
+          : DateTime.now()),
       status: json['status'] is String
           ? stringToTenderStatus(json['status'])
           : TenderStatus.values[json['status'] ?? 0],
       createdAt: json['createdAt'] is Timestamp
           ? (json['createdAt'] as Timestamp).toDate()
-          : DateTime.parse(json['createdAt']),
+          : (json['createdAt'] is String
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now()),
       items: (json['items'] as List?)
           ?.map((i) => TenderItem.fromJson(i))
-          ?.toList() ?? [],
+          .toList() ?? [],
       attachmentUrls: (json['attachmentUrls'] as List?)?.cast<String>(),
     );
   }
 
+  // Фабричний метод для створення об'єкта з документа Firestore
   factory Tender.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    data['id'] = doc.id; // Ensure the ID is in the data
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    // Додаємо ID документа до даних
+    data['id'] = doc.id;
     return Tender.fromJson(data);
   }
 
+  // Метод для перетворення об'єкта у JSON
   Map<String, dynamic> toJson() {
     return {
       'userId': userId,
@@ -112,12 +121,12 @@ class Tender {
     };
   }
 
+  // Метод для перетворення об'єкта у формат для Firestore
   Map<String, dynamic> toFirestore() {
     final json = toJson();
-    // Convert DateTime objects to Firestore Timestamps
+    // Перетворюємо DateTime в Timestamp для Firestore
     json['validUntil'] = Timestamp.fromDate(validUntil);
     json['createdAt'] = Timestamp.fromDate(createdAt);
-    // Remove ID as it will be the document ID
     return json;
   }
 }
