@@ -107,8 +107,8 @@ class ListingGridItem extends StatelessWidget {
                     ),
                     child: IconButton(
                       icon: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: isFavorite ? Colors.red : Colors.grey,
+                        isFavorite ? Icons.star : Icons.star_border,
+                        color: isFavorite ? Colors.amber : Colors.grey,
                       ),
                       onPressed: () async {
                         try {

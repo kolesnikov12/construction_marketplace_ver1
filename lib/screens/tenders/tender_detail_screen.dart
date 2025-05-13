@@ -540,8 +540,8 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? Colors.red : null,
+              isFavorite ? Icons.star : Icons.star_border,
+              color: isFavorite ? Colors.amber : null,
             ),
             onPressed: _toggleFavorite,
             tooltip: isFavorite

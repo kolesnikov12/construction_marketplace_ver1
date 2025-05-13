@@ -74,7 +74,7 @@ class AppDrawer extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.favorite),
+              leading: Icon(Icons.star),
               title: Text(localization.translate('favorites')),
               onTap: () {
                 Navigator.of(context).pop();

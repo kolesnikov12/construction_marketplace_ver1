@@ -131,19 +131,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
           children: [
             // Favorite Tenders Tab
             favoriteTenders.isEmpty
-                ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.favorite_border, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    localization.translate('no_favorite_tenders'),
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ],
-              ),
-            )
+                ? Center()
                 : ListView.builder(
               itemCount: favoriteTenders.length,
               itemBuilder: (ctx, index) {
@@ -156,31 +144,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
                       arguments: tender.id,
                     );
                   },
-                  trailingBuilder: (BuildContext context) {
-                    return IconButton(
-                      icon: Icon(Icons.favorite, color: Colors.red),
-                      onPressed: () => _toggleFavoriteTender(tender.id),
-                    );
-                  },
                 );
               },
             ),
 
             // Favorite Listings Tab
             favoriteListings.isEmpty
-                ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.favorite_border, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    localization.translate('no_favorite_listings'),
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ],
-              ),
-            )
+                ? Center()
                 : GridView.builder(
               padding: const EdgeInsets.all(8.0),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
