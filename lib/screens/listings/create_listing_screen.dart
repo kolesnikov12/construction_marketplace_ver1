@@ -1,4 +1,3 @@
-
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -16,6 +15,8 @@ import '../../models/enums.dart';
 import '../../utils/l10n/app_localizations.dart';
 import '../../widgets/app_drawer.dart';
 import 'listing_item_form.dart';
+import '../../utils/responsive_helper.dart';
+import '../../utils/responsive_builder.dart';
 
 // A class to handle both web and mobile files
 class PlatformFile {
@@ -261,6 +262,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
     final listingBloc = BlocProvider.of<ListingBloc>(context);
+    final isDesktop = ResponsiveHelper.isDesktop(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -301,279 +303,481 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             onTap: () => FocusScope.of(context).unfocus(),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_errorMessage != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: Text(
-                            _errorMessage!,
-                            style: TextStyle(color: Colors.red),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
+              child: Center(
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    child: Container(
+                      constraints: BoxConstraints(maxWidth: isDesktop ? 1200 : double.infinity),
+                      child: Card(
+                        elevation: isDesktop ? 4 : 1,
+                        child: Padding(
+                          padding: EdgeInsets.all(isDesktop ? 32 : 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Error message display
+                              if (_errorMessage != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 16.0),
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: TextStyle(color: Colors.red),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
 
-                      // Title
-                      TextFormField(
-                        controller: _titleController,
-                        decoration: InputDecoration(
-                          labelText: localization.translate('listing_title') + ' *',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return localization.translate('field_required');
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 16),
-
-                      // Items
-                      Text(
-                        localization.translate('items'),
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      SizedBox(height: 8),
-
-                      ...List.generate(_items.length, (index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: Card(
-                            elevation: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        '${localization.translate('item')} ${index + 1}',
-                                        style: Theme.of(context).textTheme.titleMedium,
-                                      ),
-                                      if (_items.length > 1)
-                                        IconButton(
-                                          icon: Icon(Icons.delete, color: Colors.red),
-                                          onPressed: () => _removeItem(index),
+                              // Desktop layout for Title, City, Weeks
+                              if (isDesktop) ...[
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Title
+                                    Expanded(
+                                      flex: 2,
+                                      child: TextFormField(
+                                        controller: _titleController,
+                                        decoration: InputDecoration(
+                                          labelText: localization.translate('listing_title') + ' *',
+                                          border: OutlineInputBorder(),
                                         ),
+                                        validator: (value) {
+                                          if (value == null || value.trim().isEmpty) {
+                                            return localization.translate('field_required');
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    SizedBox(width: 16),
+
+                                    // City
+                                    Expanded(
+                                      flex: 2,
+                                      child: TypeAheadFormField(
+                                        textFieldConfiguration: TextFieldConfiguration(
+                                          controller: _cityController,
+                                          decoration: InputDecoration(
+                                            labelText: localization.translate('city') + ' *',
+                                            border: OutlineInputBorder(),
+                                          ),
+                                        ),
+                                        suggestionsCallback: (pattern) async {
+                                          return Provider.of<CityProvider>(context, listen: false)
+                                              .getSuggestions(pattern);
+                                        },
+                                        itemBuilder: (context, suggestion) {
+                                          return ListTile(
+                                            title: Text(suggestion),
+                                          );
+                                        },
+                                        onSuggestionSelected: (suggestion) {
+                                          _cityController.text = suggestion;
+                                        },
+                                        validator: (value) {
+                                          if (value == null || value.trim().isEmpty) {
+                                            return localization.translate('field_required');
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+
+                                    SizedBox(width: 16),
+
+                                    // Valid Weeks
+                                    Expanded(
+                                      flex: 1,
+                                      child: DropdownButtonFormField<int>(
+                                        value: _validWeeks,
+                                        decoration: InputDecoration(
+                                          labelText: localization.translate('valid_weeks'),
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        items: List.generate(12, (index) {
+                                          final week = index + 1;
+                                          return DropdownMenuItem(
+                                            value: week,
+                                            child: Text('$week'),
+                                          );
+                                        }),
+                                        onChanged: (value) {
+                                          if (value != null) {
+                                            setState(() {
+                                              _validWeeks = value;
+                                            });
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ] else ...[
+                                // Mobile layout - vertically stacked
+                                // Title
+                                TextFormField(
+                                  controller: _titleController,
+                                  decoration: InputDecoration(
+                                    labelText: localization.translate('listing_title') + ' *',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return localization.translate('field_required');
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                SizedBox(height: 16),
+                              ],
+
+                              // Items Section
+                              SizedBox(height: 24),
+                              Text(
+                                localization.translate('items'),
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              SizedBox(height: 8),
+
+                              ...List.generate(_items.length, (index) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16.0),
+                                  child: Card(
+                                    elevation: 2,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                '${localization.translate('item')} ${index + 1}',
+                                                style: Theme.of(context).textTheme.titleMedium,
+                                              ),
+                                              if (_items.length > 1)
+                                                IconButton(
+                                                  icon: Icon(Icons.delete, color: Colors.red),
+                                                  onPressed: () => _removeItem(index),
+                                                ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 8),
+                                          ListingItemForm(
+                                            item: _items[index],
+                                            onUpdate: (updatedItem) => _updateItem(index, updatedItem),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }),
+
+                              if (_items.length < 20)
+                                ElevatedButton.icon(
+                                  icon: Icon(Icons.add),
+                                  label: Text(localization.translate('add_item')),
+                                  onPressed: _addItem,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.grey[200],
+                                    foregroundColor: Colors.black87,
+                                  ),
+                                ),
+                              SizedBox(height: 24),
+
+                              // Photos
+                              Text(
+                                localization.translate('photos') + ' *',
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              Text(
+                                localization.translate('at_least_one_photo_required_max_5'),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              SizedBox(height: 8),
+
+                              // Photo preview grid (desktop) or horizontal list (mobile)
+                              if (_selectedPhotos.isNotEmpty)
+                                isDesktop
+                                    ? GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: NeverScrollableScrollPhysics(),
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 5,
+                                    crossAxisSpacing: 10,
+                                    mainAxisSpacing: 10,
+                                    childAspectRatio: 1,
+                                  ),
+                                  itemCount: _selectedPhotos.length,
+                                  itemBuilder: (ctx, index) {
+                                    final platformFile = _selectedPhotos[index];
+                                    return Stack(
+                                      children: [
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: Colors.grey),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: _buildPhotoPreview(platformFile, index),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: 0,
+                                          right: 0,
+                                          child: IconButton(
+                                            icon: Icon(Icons.close, color: Colors.red),
+                                            onPressed: () => _removePhoto(index),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                )
+                                    : Container(
+                                  height: 120,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: _selectedPhotos.length,
+                                    itemBuilder: (ctx, index) {
+                                      final platformFile = _selectedPhotos[index];
+                                      return Stack(
+                                        children: [
+                                          Container(
+                                            margin: EdgeInsets.only(right: 8),
+                                            width: 120,
+                                            height: 120,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(color: Colors.grey),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: _buildPhotoPreview(platformFile, index),
+                                            ),
+                                          ),
+                                          Positioned(
+                                            top: 0,
+                                            right: 8,
+                                            child: IconButton(
+                                              icon: Icon(Icons.close, color: Colors.red),
+                                              onPressed: () => _removePhoto(index),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ),
+                              SizedBox(height: 16),
+
+                              // Photo selection buttons
+                              if (_selectedPhotos.length < 5)
+                                Center(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        icon: Icon(Icons.photo_library),
+                                        label: Text(localization.translate('pick_photos')),
+                                        onPressed: _pickPhotos,
+                                      ),
+                                      SizedBox(width: 16),
+                                      ElevatedButton.icon(
+                                        icon: Icon(Icons.camera_alt),
+                                        label: Text(localization.translate('take_photo')),
+                                        onPressed: _takePicture,
+                                      ),
                                     ],
                                   ),
-                                  SizedBox(height: 8),
-                                  ListingItemForm(
-                                    item: _items[index],
-                                    onUpdate: (updatedItem) => _updateItem(index, updatedItem),
+                                ),
+
+                              SizedBox(height: 24),
+
+                              // For mobile, add missing inputs
+                              if (!isDesktop) ...[
+                                // City
+                                TypeAheadFormField(
+                                  textFieldConfiguration: TextFieldConfiguration(
+                                    controller: _cityController,
+                                    decoration: InputDecoration(
+                                      labelText: localization.translate('city') + ' *',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                  suggestionsCallback: (pattern) async {
+                                    return Provider.of<CityProvider>(context, listen: false)
+                                        .getSuggestions(pattern);
+                                  },
+                                  itemBuilder: (context, suggestion) {
+                                    return ListTile(
+                                      title: Text(suggestion),
+                                    );
+                                  },
+                                  onSuggestionSelected: (suggestion) {
+                                    _cityController.text = suggestion;
+                                  },
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return localization.translate('field_required');
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                SizedBox(height: 16),
+
+                                // Valid Weeks
+                                DropdownButtonFormField<int>(
+                                  value: _validWeeks,
+                                  decoration: InputDecoration(
+                                    labelText: localization.translate('valid_weeks'),
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  items: List.generate(12, (index) {
+                                    final week = index + 1;
+                                    return DropdownMenuItem(
+                                      value: week,
+                                      child: Text('$week'),
+                                    );
+                                  }),
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      setState(() {
+                                        _validWeeks = value;
+                                      });
+                                    }
+                                  },
+                                ),
+                                SizedBox(height: 16),
+                              ],
+
+                              // Delivery Options - desktop horizontal, mobile vertical
+                              Text(
+                                localization.translate('delivery') + ' *',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              isDesktop
+                                  ? Row(
+                                children: [
+                                  Expanded(
+                                    child: RadioListTile<DeliveryOption>(
+                                      title: Text(localization.translate('pickup_only')),
+                                      value: DeliveryOption.pickup,
+                                      groupValue: _deliveryOption,
+                                      onChanged: (DeliveryOption? value) {
+                                        setState(() {
+                                          _deliveryOption = value!;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: RadioListTile<DeliveryOption>(
+                                      title: Text(localization.translate('can_ship')),
+                                      value: DeliveryOption.delivery,
+                                      groupValue: _deliveryOption,
+                                      onChanged: (DeliveryOption? value) {
+                                        setState(() {
+                                          _deliveryOption = value!;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: RadioListTile<DeliveryOption>(
+                                      title: Text(localization.translate('requires_discussion')),
+                                      value: DeliveryOption.discuss,
+                                      groupValue: _deliveryOption,
+                                      onChanged: (DeliveryOption? value) {
+                                        setState(() {
+                                          _deliveryOption = value!;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              )
+                                  : Column(
+                                children: [
+                                  RadioListTile<DeliveryOption>(
+                                    title: Text(localization.translate('pickup_only')),
+                                    value: DeliveryOption.pickup,
+                                    groupValue: _deliveryOption,
+                                    onChanged: (DeliveryOption? value) {
+                                      setState(() {
+                                        _deliveryOption = value!;
+                                      });
+                                    },
+                                  ),
+                                  RadioListTile<DeliveryOption>(
+                                    title: Text(localization.translate('can_ship')),
+                                    value: DeliveryOption.delivery,
+                                    groupValue: _deliveryOption,
+                                    onChanged: (DeliveryOption? value) {
+                                      setState(() {
+                                        _deliveryOption = value!;
+                                      });
+                                    },
+                                  ),
+                                  RadioListTile<DeliveryOption>(
+                                    title: Text(localization.translate('requires_discussion')),
+                                    value: DeliveryOption.discuss,
+                                    groupValue: _deliveryOption,
+                                    onChanged: (DeliveryOption? value) {
+                                      setState(() {
+                                        _deliveryOption = value!;
+                                      });
+                                    },
                                   ),
                                 ],
                               ),
-                            ),
-                          ),
-                        );
-                      }),
+                              SizedBox(height: 16),
 
-                      if (_items.length < 20)
-                        ElevatedButton.icon(
-                          icon: Icon(Icons.add),
-                          label: Text(localization.translate('add_item')),
-                          onPressed: _addItem,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[200],
-                            foregroundColor: Colors.black87,
-                          ),
-                        ),
-                      SizedBox(height: 24),
+                              // Description
+                              TextFormField(
+                                controller: _descriptionController,
+                                decoration: InputDecoration(
+                                  labelText: localization.translate('description'),
+                                  border: OutlineInputBorder(),
+                                  alignLabelWithHint: true,
+                                ),
+                                maxLines: 5,
+                              ),
+                              SizedBox(height: 24),
 
-                      // Photos
-                      Text(
-                        localization.translate('photos') + ' *',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      Text(
-                        localization.translate('at_least_one_photo_required_max_5'),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      SizedBox(height: 8),
-
-                      if (_selectedPhotos.isNotEmpty)
-                        Container(
-                          height: 120,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _selectedPhotos.length,
-                            itemBuilder: (ctx, index) {
-                              final platformFile = _selectedPhotos[index];
-                              return Stack(
-                                children: [
-                                  Container(
-                                    margin: EdgeInsets.only(right: 8),
-                                    width: 120,
-                                    height: 120,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: _buildPhotoPreview(platformFile, index),
+                              // Submit
+                              Center(
+                                child: ElevatedButton(
+                                  onPressed: _isLoading ? null : _submitForm,
+                                  style: ElevatedButton.styleFrom(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: isDesktop ? 64 : 48,
+                                        vertical: isDesktop ? 16 : 12
                                     ),
                                   ),
-                                  Positioned(
-                                    top: 0,
-                                    right: 8,
-                                    child: IconButton(
-                                      icon: Icon(Icons.close, color: Colors.red),
-                                      onPressed: () => _removePhoto(index),
+                                  child: _isLoading
+                                      ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
                                     ),
+                                  )
+                                      : Text(
+                                    localization.translate('submit'),
+                                    style: TextStyle(fontSize: isDesktop ? 18 : 16),
                                   ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-                      SizedBox(height: 16),
-
-                      if (_selectedPhotos.length < 5)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ElevatedButton.icon(
-                              icon: Icon(Icons.photo_library),
-                              label: Text(localization.translate('pick_photos')),
-                              onPressed: _pickPhotos,
-                            ),
-                            SizedBox(width: 16),
-                            ElevatedButton.icon(
-                              icon: Icon(Icons.camera_alt),
-                              label: Text(localization.translate('take_photo')),
-                              onPressed: _takePicture,
-                            ),
-                          ],
-                        ),
-
-                      SizedBox(height: 24),
-
-                      // City
-                      TypeAheadFormField(
-                        textFieldConfiguration: TextFieldConfiguration(
-                          controller: _cityController,
-                          decoration: InputDecoration(
-                            labelText: localization.translate('city') + ' *',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        suggestionsCallback: (pattern) async {
-                          return Provider.of<CityProvider>(context, listen: false)
-                              .getSuggestions(pattern);
-                        },
-                        itemBuilder: (context, suggestion) {
-                          return ListTile(
-                            title: Text(suggestion),
-                          );
-                        },
-                        onSuggestionSelected: (suggestion) {
-                          _cityController.text = suggestion;
-                        },
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return localization.translate('field_required');
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 16),
-
-                      // Valid Weeks
-                      DropdownButtonFormField<int>(
-                        value: _validWeeks,
-                        decoration: InputDecoration(
-                          labelText: localization.translate('valid_weeks'),
-                          border: OutlineInputBorder(),
-                        ),
-                        items: List.generate(12, (index) {
-                          final week = index + 1;
-                          return DropdownMenuItem(
-                            value: week,
-                            child: Text('$week'),
-                          );
-                        }),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() {
-                              _validWeeks = value;
-                            });
-                          }
-                        },
-                      ),
-                      SizedBox(height: 16),
-
-                      // Delivery Option
-                      Text(
-                        localization.translate('delivery') + ' *',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      RadioListTile<DeliveryOption>(
-                        title: Text(localization.translate('pickup_only')),
-                        value: DeliveryOption.pickup,
-                        groupValue: _deliveryOption,
-                        onChanged: (DeliveryOption? value) {
-                          setState(() {
-                            _deliveryOption = value!;
-                          });
-                        },
-                      ),
-                      RadioListTile<DeliveryOption>(
-                        title: Text(localization.translate('can_ship')),
-                        value: DeliveryOption.delivery,
-                        groupValue: _deliveryOption,
-                        onChanged: (DeliveryOption? value) {
-                          setState(() {
-                            _deliveryOption = value!;
-                          });
-                        },
-                      ),
-                      RadioListTile<DeliveryOption>(
-                        title: Text(localization.translate('requires_discussion')),
-                        value: DeliveryOption.discuss,
-                        groupValue: _deliveryOption,
-                        onChanged: (DeliveryOption? value) {
-                          setState(() {
-                            _deliveryOption = value!;
-                          });
-                        },
-                      ),
-                      SizedBox(height: 16),
-
-                      // Description
-                      TextFormField(
-                        controller: _descriptionController,
-                        decoration: InputDecoration(
-                          labelText: localization.translate('description'),
-                          border: OutlineInputBorder(),
-                          alignLabelWithHint: true,
-                        ),
-                        maxLines: 5,
-                      ),
-                      SizedBox(height: 24),
-
-                      // Submit
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _submitForm,
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 48, vertical: 12),
-                          ),
-                          child: Text(
-                            localization.translate('submit'),
-                            style: TextStyle(fontSize: 16),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),

@@ -1,4 +1,3 @@
-// lib/screens/home_screen.dart
 import 'package:construction_marketplace/screens/tenders/listing_list_screen.dart';
 import 'package:construction_marketplace/screens/tenders/tender_list_screen.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +8,7 @@ import 'package:construction_marketplace/providers/locale_provider.dart';
 import 'package:construction_marketplace/screens/tenders/create_tender_screen.dart';
 import 'package:construction_marketplace/screens/listings/create_listing_screen.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
+import 'package:construction_marketplace/utils/responsive_helper.dart';
 
 import '../providers/auth_provider.dart';
 import '../widgets/app_drawer.dart';
@@ -120,10 +120,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
     final isEnglish = Provider.of<LocaleProvider>(context).locale.languageCode == 'en';
+    final isLargeScreen = ResponsiveHelper.isLargeScreen(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(localization.translate('app_title')),
+        centerTitle: !isLargeScreen,
         actions: [
           IconButton(
             icon: Icon(isEnglish ? Icons.language : Icons.language_outlined),
@@ -155,53 +157,70 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ],
         ),
       ),
-      drawer: AppDrawer(),
-      body: Column(
+      drawer: isLargeScreen ? null : AppDrawer(),
+      body: Row(
         children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: localization.translate('search'),
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                  icon: Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    _performSearch('');
-                  },
-                )
-                    : null,
-              ),
-              onChanged: _performSearch,
+          // Side navigation for desktop
+          if (isLargeScreen)
+            SizedBox(
+              width: 240,
+              child: AppDrawer(),
             ),
-          ),
 
-          // Tab Content
+          // Main content area
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
+            child: Column(
               children: [
-                // Tenders Tab
-                RefreshIndicator(
-                  onRefresh: () => Provider.of<TenderProvider>(context, listen: false).fetchTenders(
-                    searchQuery: _searchQuery,
+                // Search Bar - wider on desktop
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isLargeScreen ? 24.0 : 16.0,
+                    vertical: 16.0,
                   ),
-                  child: TenderListScreen(searchQuery: _searchQuery),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: localization.translate('search'),
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                        icon: Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          _performSearch('');
+                        },
+                      )
+                          : null,
+                    ),
+                    onChanged: _performSearch,
+                  ),
                 ),
 
-                // Listings Tab
-                RefreshIndicator(
-                  onRefresh: () => Provider.of<ListingProvider>(context, listen: false).fetchListings(
-                    searchQuery: _searchQuery,
+                // Tab Content
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // Tenders Tab
+                      RefreshIndicator(
+                        onRefresh: () => Provider.of<TenderProvider>(context, listen: false).fetchTenders(
+                          searchQuery: _searchQuery,
+                        ),
+                        child: TenderListScreen(searchQuery: _searchQuery),
+                      ),
+
+                      // Listings Tab
+                      RefreshIndicator(
+                        onRefresh: () => Provider.of<ListingProvider>(context, listen: false).fetchListings(
+                          searchQuery: _searchQuery,
+                        ),
+                        child: ListingListScreen(searchQuery: _searchQuery),
+                      ),
+                    ],
                   ),
-                  child: ListingListScreen(searchQuery: _searchQuery),
                 ),
               ],
             ),
@@ -219,4 +238,3 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 }
-

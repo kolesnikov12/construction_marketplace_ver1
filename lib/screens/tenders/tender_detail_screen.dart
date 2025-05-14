@@ -11,6 +11,7 @@ import 'package:construction_marketplace/widgets/app_drawer.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:construction_marketplace/utils/responsive_helper.dart';
 
 import '../../models/enums.dart';
 import '../../models/tender.dart';
@@ -25,6 +26,7 @@ class TenderDetailScreen extends StatefulWidget {
 class _TenderDetailScreenState extends State<TenderDetailScreen> {
   bool _isLoading = true;
   Tender? _tender;
+  int _currentImageIndex = 0;
 
   @override
   void didChangeDependencies() {
@@ -480,6 +482,8 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
     final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 0);
     final dateFormatter = DateFormat('MMMM d, yyyy');
 
+    final isLargeScreen = ResponsiveHelper.isLargeScreen(context);
+
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
@@ -530,6 +534,391 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
         break;
     }
 
+    // Desktop layout with two panels
+    if (isLargeScreen) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text(localization.translate('tender_details')),
+          actions: [
+            IconButton(
+              icon: Icon(
+                isFavorite ? Icons.star : Icons.star_border,
+                color: isFavorite ? Colors.amber : null,
+              ),
+              onPressed: _toggleFavorite,
+              tooltip: isFavorite
+                  ? localization.translate('remove_from_favorites')
+                  : localization.translate('add_to_favorites'),
+            ),
+          ],
+        ),
+        body: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isLargeScreen)
+              SizedBox(
+                width: 240,
+                child: AppDrawer(),
+              ),
+
+            // Left panel - Attachments and Images
+            Expanded(
+              flex: 2,
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Status Badge
+                      Container(
+                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _tender!.status == TenderStatus.open ||
+                                  _tender!.status == TenderStatus.extended
+                                  ? Icons.check_circle
+                                  : Icons.cancel,
+                              color: statusColor,
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              statusMessage,
+                              style: TextStyle(
+                                color: statusColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 24),
+
+                      // Attachments
+                      if (_tender!.attachmentUrls != null && _tender!.attachmentUrls!.isNotEmpty)
+                        _buildAttachmentsList(),
+
+                      SizedBox(height: 24),
+
+                      // Budget card
+                      Card(
+                        elevation: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                localization.translate('budget'),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                formatter.format(_tender!.budget),
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  color: Colors.blue[800],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              Divider(height: 32),
+
+                              // Valid Until
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    localization.translate('valid_until'),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    dateFormatter.format(_tender!.validUntil),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: 24),
+
+                      // Actions for non-creators
+                      if (!isCreator && _tender!.status != TenderStatus.closed)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _bidOnTender,
+                            icon: Icon(Icons.gavel),
+                            label: Text(
+                              localization.translate('bid_on_tender'),
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Right panel - Tender details
+            Expanded(
+              flex: 3,
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _tender!.title,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      SizedBox(height: 16),
+
+                      // Location & Delivery Row
+                      Row(
+                        children: [
+                          Icon(Icons.location_on, size: 18, color: Colors.grey[700]),
+                          SizedBox(width: 8),
+                          Text(
+                            _tender!.city,
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 16,
+                            ),
+                          ),
+                          SizedBox(width: 24),
+                          Icon(
+                            _tender!.deliveryOption == DeliveryOption.pickup
+                                ? Icons.store
+                                : (_tender!.deliveryOption == DeliveryOption.delivery
+                                ? Icons.local_shipping
+                                : Icons.question_answer),
+                            size: 18,
+                            color: Colors.grey[700],
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            _tender!.deliveryOption == DeliveryOption.pickup
+                                ? localization.translate('pickup_only')
+                                : (_tender!.deliveryOption == DeliveryOption.delivery
+                                ? localization.translate('delivery_required')
+                                : localization.translate('requires_discussion')),
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 24),
+
+                      // Description
+                      if (_tender!.description != null && _tender!.description!.isNotEmpty) ...[
+                        Text(
+                          localization.translate('description'),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Text(
+                            _tender!.description!,
+                            style: TextStyle(
+                              fontSize: 16,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 24),
+                      ],
+
+                      // Items List
+                      Text(
+                        localization.translate('items'),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                      SizedBox(height: 16),
+
+                      // Enhanced items list
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: _tender!.items.length,
+                        itemBuilder: (ctx, index) {
+                          final item = _tender!.items[index];
+                          final categoryName = categoryProvider.getCategoryName(
+                            item.categoryId,
+                            localization.isEnglish(),
+                          );
+                          String? subcategoryName;
+                          subcategoryName = categoryProvider.getCategoryName(
+                            item.subcategoryId,
+                            localization.isEnglish(),
+                          );
+
+                          return Card(
+                            margin: EdgeInsets.only(bottom: 16),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item.itemName,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 18,
+                                              ),
+                                            ),
+                                            SizedBox(height: 8),
+                                            Text(
+                                              subcategoryName != null
+                                                  ? '$categoryName > $subcategoryName'
+                                                  : categoryName,
+                                              style: TextStyle(
+                                                color: Colors.grey[700],
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[100],
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          '${item.quantity} ${localization.translate('unit_${item.unit}')}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  if (item.manufacturer.isNotEmpty) ...[
+                                    SizedBox(height: 16),
+                                    Divider(),
+                                    SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                localization.translate('manufacturer'),
+                                                style: TextStyle(
+                                                  color: Colors.grey[700],
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                item.manufacturer,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (item.model.isNotEmpty)
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  localization.translate('model'),
+                                                  style: TextStyle(
+                                                    color: Colors.grey[700],
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                SizedBox(height: 4),
+                                                Text(
+                                                  item.model,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        // No bottom bar on desktop, bid button is in left panel
+      );
+    }
+
+    // Mobile layout - original implementation
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(

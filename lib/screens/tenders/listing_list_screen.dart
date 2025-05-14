@@ -7,6 +7,7 @@ import 'package:construction_marketplace/screens/listings/listing_detail_screen.
 import 'package:construction_marketplace/widgets/listings/listing_grid_item.dart';
 import 'package:construction_marketplace/widgets/listings/listing_filter_dialog.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
+import 'package:construction_marketplace/utils/responsive_helper.dart';
 
 class ListingListScreen extends StatefulWidget {
   static const routeName = '/listings';
@@ -119,6 +120,12 @@ class _ListingListScreenState extends State<ListingListScreen> {
     final localization = AppLocalizations.of(context)!;
     final listingProvider = Provider.of<ListingProvider>(context);
     final listings = listingProvider.listings;
+    final isLargeScreen = ResponsiveHelper.isLargeScreen(context);
+
+    // Responsive grid configuration
+    final crossAxisCount = ResponsiveHelper.getGridCrossAxisCount(context);
+    final childAspectRatio = ResponsiveHelper.getGridItemAspectRatio(context);
+    final contentPadding = ResponsiveHelper.getContentPadding(context);
 
     return Scaffold(
       appBar: widget.searchQuery.isEmpty ? AppBar(
@@ -129,7 +136,10 @@ class _ListingListScreenState extends State<ListingListScreen> {
         children: [
           if (_hasActiveFilters)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: EdgeInsets.symmetric(
+                  horizontal: isLargeScreen ? 24.0 : 16.0,
+                  vertical: 8.0
+              ),
               color: Colors.grey[200],
               child: Row(
                 children: [
@@ -254,27 +264,31 @@ class _ListingListScreenState extends State<ListingListScreen> {
                   ],
                 ),
               )
-                  : GridView.builder(
-                padding: const EdgeInsets.all(8.0),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
-                  childAspectRatio: 0.75,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
+                  : Padding(
+                padding: contentPadding,
+                child: GridView.builder(
+                  padding: EdgeInsets.zero,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    childAspectRatio: childAspectRatio,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: listings.length,
+                  itemBuilder: (ctx, index) {
+                    final listing = listings[index];
+                    return ListingGridItem(
+                      listing: listing,
+                      isDesktopView: isLargeScreen,
+                      onTap: () {
+                        Navigator.of(context).pushNamed(
+                          ListingDetailScreen.routeName,
+                          arguments: listing.id,
+                        );
+                      },
+                    );
+                  },
                 ),
-                itemCount: listings.length,
-                itemBuilder: (ctx, index) {
-                  final listing = listings[index];
-                  return ListingGridItem(
-                    listing: listing,
-                    onTap: () {
-                      Navigator.of(context).pushNamed(
-                        ListingDetailScreen.routeName,
-                        arguments: listing.id,
-                      );
-                    },
-                  );
-                },
               ),
             ),
           ),

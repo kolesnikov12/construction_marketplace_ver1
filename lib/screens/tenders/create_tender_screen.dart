@@ -14,6 +14,9 @@ import '../../providers/city_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/tenders/tender_item_form.dart';
 import 'package:provider/provider.dart';
+import '../../utils/responsive_helper.dart';
+
+
 
 class CreateTenderScreen extends StatefulWidget {
   static const routeName = '/create-tender';
@@ -230,10 +233,527 @@ class _CreateTenderScreenState extends State<CreateTenderScreen> {
     }
   }
 
+  // Build the form content based on desktop or mobile layout
+  Widget _buildFormContent(BuildContext context, bool isDesktop) {
+    final localization = AppLocalizations.of(context)!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text(
+              _errorMessage!,
+              style: TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+          ),
+
+        // For desktop: title, budget, city, and valid weeks in the first row
+        if (isDesktop) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title
+              Expanded(
+                flex: 2,
+                child: TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    labelText: localization.translate('tender_title') + ' *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return localization.translate('field_required');
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              SizedBox(width: 16),
+              // Budget
+              Expanded(
+                flex: 1,
+                child: TextFormField(
+                  controller: _budgetController,
+                  decoration: InputDecoration(
+                    labelText: localization.translate('budget_cad') + ' *',
+                    border: OutlineInputBorder(),
+                    prefixText: '\$ ',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return localization.translate('field_required');
+                    }
+                    if (double.tryParse(value) == null) {
+                      return localization.translate('enter_valid_number');
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // City
+              Expanded(
+                flex: 2,
+                child: TypeAheadFormField(
+                  textFieldConfiguration: TextFieldConfiguration(
+                    controller: _cityController,
+                    decoration: InputDecoration(
+                      labelText: localization.translate('city') + ' *',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  suggestionsCallback: (pattern) async {
+                    return Provider.of<CityProvider>(context, listen: false)
+                        .getSuggestions(pattern);
+                  },
+                  itemBuilder: (context, suggestion) {
+                    return ListTile(
+                      title: Text(suggestion),
+                    );
+                  },
+                  onSuggestionSelected: (suggestion) {
+                    _cityController.text = suggestion;
+                  },
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return localization.translate('field_required');
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              SizedBox(width: 16),
+
+              // Valid Weeks dropdown
+              Expanded(
+                flex: 1,
+                child: DropdownButtonFormField<int>(
+                  value: _validWeeks,
+                  decoration: InputDecoration(
+                    labelText: localization.translate('valid_for') + ' *',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [1, 2, 3, 4].map((int value) {
+                    return DropdownMenuItem<int>(
+                      value: value,
+                      child: Text('$value ${localization.translate(value == 1 ? 'week' : 'weeks')}'),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _validWeeks = newValue!;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ] else ...[
+          // Mobile layout - vertical stacking
+          // Tender Title
+          TextFormField(
+            controller: _titleController,
+            decoration: InputDecoration(
+              labelText: localization.translate('tender_title') + ' *',
+              border: OutlineInputBorder(),
+            ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return localization.translate('field_required');
+              }
+              return null;
+            },
+          ),
+          SizedBox(height: 16),
+
+          // Budget
+          TextFormField(
+            controller: _budgetController,
+            decoration: InputDecoration(
+              labelText: localization.translate('budget_cad') + ' *',
+              border: OutlineInputBorder(),
+              prefixText: '\$ ',
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return localization.translate('field_required');
+              }
+              if (double.tryParse(value) == null) {
+                return localization.translate('enter_valid_number');
+              }
+              return null;
+            },
+          ),
+          SizedBox(height: 16),
+
+          // City
+          TypeAheadFormField(
+            textFieldConfiguration: TextFieldConfiguration(
+              controller: _cityController,
+              decoration: InputDecoration(
+                labelText: localization.translate('city') + ' *',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            suggestionsCallback: (pattern) async {
+              return Provider.of<CityProvider>(context, listen: false)
+                  .getSuggestions(pattern);
+            },
+            itemBuilder: (context, suggestion) {
+              return ListTile(
+                title: Text(suggestion),
+              );
+            },
+            onSuggestionSelected: (suggestion) {
+              _cityController.text = suggestion;
+            },
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return localization.translate('field_required');
+              }
+              return null;
+            },
+          ),
+          SizedBox(height: 16),
+
+          // Valid Weeks
+          DropdownButtonFormField<int>(
+            value: _validWeeks,
+            decoration: InputDecoration(
+              labelText: localization.translate('valid_for') + ' *',
+              border: OutlineInputBorder(),
+            ),
+            items: [1, 2, 3, 4].map((int value) {
+              return DropdownMenuItem<int>(
+                value: value,
+                child: Text('$value ${localization.translate(value == 1 ? 'week' : 'weeks')}'),
+              );
+            }).toList(),
+            onChanged: (newValue) {
+              setState(() {
+                _validWeeks = newValue!;
+              });
+            },
+          ),
+        ],
+
+        SizedBox(height: 24),
+
+        // Items Section - Similar layout for both desktop and mobile
+        Text(
+          localization.translate('items'),
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        SizedBox(height: 8),
+
+        // Items List
+        ...List.generate(_items.length, (index) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${localization.translate('item')} ${index + 1}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        if (_items.length > 1)
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => _removeItem(index),
+                          ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    TenderItemForm(
+                      item: _items[index],
+                      onUpdate: (updatedItem) => _updateItem(index, updatedItem),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+
+        // Add Item Button
+        if (_items.length < 30)
+          ElevatedButton.icon(
+            icon: Icon(Icons.add),
+            label: Text(localization.translate('add_item')),
+            onPressed: _addItem,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[200],
+              foregroundColor: Colors.black87,
+            ),
+          ),
+        SizedBox(height: 24),
+
+        // Description TextArea
+        TextFormField(
+          controller: _descriptionController,
+          decoration: InputDecoration(
+            labelText: localization.translate('description'),
+            border: OutlineInputBorder(),
+            alignLabelWithHint: true,
+          ),
+          maxLines: 5,
+        ),
+        SizedBox(height: 24),
+
+        // Delivery Option
+        Text(
+          localization.translate('delivery') + ' *',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        // For desktop, show radio buttons in a Row
+        if (isDesktop) ...[
+          Row(
+            children: [
+              Expanded(
+                child: RadioListTile<DeliveryOption>(
+                  title: Text(localization.translate('pickup_only')),
+                  value: DeliveryOption.pickup,
+                  groupValue: _deliveryOption,
+                  onChanged: (DeliveryOption? value) {
+                    setState(() {
+                      _deliveryOption = value!;
+                    });
+                  },
+                ),
+              ),
+              Expanded(
+                child: RadioListTile<DeliveryOption>(
+                  title: Text(localization.translate('delivery_required')),
+                  value: DeliveryOption.delivery,
+                  groupValue: _deliveryOption,
+                  onChanged: (DeliveryOption? value) {
+                    setState(() {
+                      _deliveryOption = value!;
+                    });
+                  },
+                ),
+              ),
+              Expanded(
+                child: RadioListTile<DeliveryOption>(
+                  title: Text(localization.translate('requires_discussion')),
+                  value: DeliveryOption.discuss,
+                  groupValue: _deliveryOption,
+                  onChanged: (DeliveryOption? value) {
+                    setState(() {
+                      _deliveryOption = value!;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ] else ...[
+          // Mobile layout - vertical radio buttons
+          RadioListTile<DeliveryOption>(
+            title: Text(localization.translate('pickup_only')),
+            value: DeliveryOption.pickup,
+            groupValue: _deliveryOption,
+            onChanged: (DeliveryOption? value) {
+              setState(() {
+                _deliveryOption = value!;
+              });
+            },
+          ),
+          RadioListTile<DeliveryOption>(
+            title: Text(localization.translate('delivery_required')),
+            value: DeliveryOption.delivery,
+            groupValue: _deliveryOption,
+            onChanged: (DeliveryOption? value) {
+              setState(() {
+                _deliveryOption = value!;
+              });
+            },
+          ),
+          RadioListTile<DeliveryOption>(
+            title: Text(localization.translate('requires_discussion')),
+            value: DeliveryOption.discuss,
+            groupValue: _deliveryOption,
+            onChanged: (DeliveryOption? value) {
+              setState(() {
+                _deliveryOption = value!;
+              });
+            },
+          ),
+        ],
+        SizedBox(height: 16),
+
+        // Attachments
+        Text(
+          localization.translate('attachments'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        Text(
+          localization.translate('max_5_files_allowed'),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        SizedBox(height: 8),
+
+        // File Picker
+        if ((kIsWeb && _webSelectedFiles.length < 5) || (!kIsWeb && _selectedFiles.length < 5))
+          ElevatedButton.icon(
+            icon: Icon(Icons.attach_file),
+            label: Text(localization.translate('select_files')),
+            onPressed: _pickFiles,
+          ),
+
+        // Selected Files List
+        if ((kIsWeb && _webSelectedFiles.isNotEmpty) || (!kIsWeb && _selectedFiles.isNotEmpty)) ...[
+          const SizedBox(height: 16),
+
+          // For desktop, display files in a grid
+          if (isDesktop && kIsWeb) ...[
+            GridView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 3,
+              ),
+              itemCount: _webSelectedFiles.length,
+              itemBuilder: (context, index) {
+                final file = _webSelectedFiles[index];
+                final extension = file.name.split('.').last;
+
+                return Card(
+                  child: ListTile(
+                    leading: Text(_getFileIcon(extension), style: TextStyle(fontSize: 24)),
+                    title: Text(file.name, overflow: TextOverflow.ellipsis),
+                    subtitle: Text('${(file.size / 1024).toStringAsFixed(2)} KB'),
+                    trailing: IconButton(
+                      icon: Icon(Icons.clear, color: Colors.red),
+                      onPressed: () => _removeFile(index),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ] else if (isDesktop && !kIsWeb) ...[
+            GridView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 3,
+              ),
+              itemCount: _selectedFiles.length,
+              itemBuilder: (context, index) {
+                final file = _selectedFiles[index];
+                final extension = path.extension(file.path).replaceAll('.', '');
+
+                return Card(
+                  child: ListTile(
+                    leading: Text(_getFileIcon(extension), style: TextStyle(fontSize: 24)),
+                    title: Text(path.basename(file.path), overflow: TextOverflow.ellipsis),
+                    subtitle: Text('${(file.lengthSync() / 1024).toStringAsFixed(2)} KB'),
+                    trailing: IconButton(
+                      icon: Icon(Icons.clear, color: Colors.red),
+                      onPressed: () => _removeFile(index),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ] else if (kIsWeb) ...[
+            // Mobile web layout
+            ...List.generate(_webSelectedFiles.length, (index) {
+              final file = _webSelectedFiles[index];
+              final extension = file.name.split('.').last;
+
+              return ListTile(
+                leading: Text(_getFileIcon(extension), style: TextStyle(fontSize: 24)),
+                title: Text(file.name),
+                subtitle: Text('${(file.size / 1024).toStringAsFixed(2)} KB'),
+                trailing: IconButton(
+                  icon: Icon(Icons.clear, color: Colors.red),
+                  onPressed: () => _removeFile(index),
+                ),
+              );
+            }),
+          ] else ...[
+            // Mobile native layout
+            ...List.generate(_selectedFiles.length, (index) {
+              final file = _selectedFiles[index];
+              final extension = path.extension(file.path).replaceAll('.', '');
+
+              return ListTile(
+                leading: Text(_getFileIcon(extension), style: TextStyle(fontSize: 24)),
+                title: Text(path.basename(file.path)),
+                subtitle: Text('${(file.lengthSync() / 1024).toStringAsFixed(2)} KB'),
+                trailing: IconButton(
+                  icon: Icon(Icons.clear, color: Colors.red),
+                  onPressed: () => _removeFile(index),
+                ),
+              );
+            }),
+          ],
+        ],
+
+        SizedBox(height: 32),
+
+        // Submit Button
+        Center(
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _submitForm,
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(
+                  horizontal: isDesktop ? 64 : 48,
+                  vertical: isDesktop ? 16 : 12
+              ),
+            ),
+            child: _isLoading
+                ? SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            )
+                : Text(
+              localization.translate('create_tender'),
+              style: TextStyle(fontSize: isDesktop ? 18 : 16),
+            ),
+          ),
+        ),
+        SizedBox(height: 24),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
     final tenderBloc = BlocProvider.of<TenderBloc>(context);
+    final isDesktop = ResponsiveHelper.isDesktop(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -272,317 +792,22 @@ class _CreateTenderScreenState extends State<CreateTenderScreen> {
               ? Center(child: CircularProgressIndicator())
               : GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
+            child: Container(
+              padding: EdgeInsets.all(16),
+              child: Center(
                 child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_errorMessage != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: Text(
-                            _errorMessage!,
-                            style: TextStyle(color: Colors.red),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-
-                      // Tender Title
-                      TextFormField(
-                        controller: _titleController,
-                        decoration: InputDecoration(
-                          labelText:
-                          localization.translate('tender_title') +
-                              ' *',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return localization
-                                .translate('field_required');
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 16),
-
-                      // Items Section
-                      Text(
-                        localization.translate('items'),
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      SizedBox(height: 8),
-
-                      // Items List (same as original code)
-                      ...List.generate(_items.length, (index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: Card(
-                            elevation: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        '${localization.translate('item')} ${index + 1}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium,
-                                      ),
-                                      if (_items.length > 1)
-                                        IconButton(
-                                          icon: Icon(Icons.delete,
-                                              color: Colors.red),
-                                          onPressed: () =>
-                                              _removeItem(index),
-                                        ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 8),
-                                  TenderItemForm(
-                                    item: _items[index],
-                                    onUpdate: (updatedItem) =>
-                                        _updateItem(index, updatedItem),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-
-                      // Add Item Button
-                      if (_items.length < 30)
-                        ElevatedButton.icon(
-                          icon: Icon(Icons.add),
-                          label: Text(localization.translate('add_item')),
-                          onPressed: _addItem,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[200],
-                            foregroundColor: Colors.black87,
-                          ),
-                        ),
-                      SizedBox(height: 24),
-
-                      // Budget
-                      TextFormField(
-                        controller: _budgetController,
-                        decoration: InputDecoration(
-                          labelText:
-                          localization.translate('budget_cad') + ' *',
-                          border: OutlineInputBorder(),
-                          prefixText: '\$ ',
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return localization
-                                .translate('field_required');
-                          }
-                          if (double.tryParse(value) == null) {
-                            return localization
-                                .translate('enter_valid_number');
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 16),
-
-                      // City
-                      TypeAheadFormField(
-                        textFieldConfiguration: TextFieldConfiguration(
-                          controller: _cityController,
-                          decoration: InputDecoration(
-                            labelText:
-                            localization.translate('city') + ' *',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        suggestionsCallback: (pattern) async {
-                          return Provider.of<CityProvider>(context,
-                              listen: false)
-                              .getSuggestions(pattern);
-                        },
-                        itemBuilder: (context, suggestion) {
-                          return ListTile(
-                            title: Text(suggestion),
-                          );
-                        },
-                        onSuggestionSelected: (suggestion) {
-                          _cityController.text = suggestion;
-                        },
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return localization
-                                .translate('field_required');
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Valid Weeks
-                      DropdownButtonFormField<int>(
-                        value: _validWeeks,
-                        decoration: InputDecoration(
-                          labelText:
-                          localization.translate('valid_for') + ' *',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: [1, 2, 3, 4].map((int value) {
-                          return DropdownMenuItem<int>(
-                            value: value,
-                            child: Text(
-                                '$value ${localization.translate(value == 1 ? 'week' : 'weeks')}'),
-                          );
-                        }).toList(),
-                        onChanged: (newValue) {
-                          setState(() {
-                            _validWeeks = newValue!;
-                          });
-                        },
-                      ),
-                      SizedBox(height: 16),
-
-                      // Delivery Option
-                      Text(
-                        localization.translate('delivery') + ' *',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      RadioListTile<DeliveryOption>(
-                        title:
-                        Text(localization.translate('pickup_only')),
-                        value: DeliveryOption.pickup,
-                        groupValue: _deliveryOption,
-                        onChanged: (DeliveryOption? value) {
-                          setState(() {
-                            _deliveryOption = value!;
-                          });
-                        },
-                      ),
-                      RadioListTile<DeliveryOption>(
-                        title: Text(
-                            localization.translate('delivery_required')),
-                        value: DeliveryOption.delivery,
-                        groupValue: _deliveryOption,
-                        onChanged: (DeliveryOption? value) {
-                          setState(() {
-                            _deliveryOption = value!;
-                          });
-                        },
-                      ),
-                      RadioListTile<DeliveryOption>(
-                        title: Text(localization
-                            .translate('requires_discussion')),
-                        value: DeliveryOption.discuss,
-                        groupValue: _deliveryOption,
-                        onChanged: (DeliveryOption? value) {
-                          setState(() {
-                            _deliveryOption = value!;
-                          });
-                        },
-                      ),
-                      SizedBox(height: 16),
-
-                      // Description
-                      TextFormField(
-                        controller: _descriptionController,
-                        decoration: InputDecoration(
-                          labelText:
-                          localization.translate('description'),
-                          border: OutlineInputBorder(),
-                          alignLabelWithHint: true,
-                        ),
-                        maxLines: 5,
-                      ),
-                      SizedBox(height: 24),
-
-                      // Attachments
-                      Text(
-                        localization.translate('attachments'),
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      Text(
-                        localization.translate('max_5_files_allowed'),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      SizedBox(height: 8),
-
-                      // File Picker
-                      if ((kIsWeb && _webSelectedFiles.length < 5) || (!kIsWeb && _selectedFiles.length < 5))
-                        ElevatedButton.icon(
-                          icon: Icon(Icons.attach_file),
-                          label: Text(localization.translate('select_files')),
-
-                          onPressed: _pickFiles,
-                        ),
-
-                      // Selected Files List
-                      if ((kIsWeb && _webSelectedFiles.isNotEmpty) || (!kIsWeb && _selectedFiles.isNotEmpty)) ...[
-                        const SizedBox(height: 16),
-                        if (kIsWeb) ...[
-                          ...List.generate(_webSelectedFiles.length, (index) {
-                            final file = _webSelectedFiles[index];
-                            final extension = file.name.split('.').last;
-
-                            return ListTile(
-                              leading: Text(_getFileIcon(extension),
-                                  style: TextStyle(fontSize: 24)),
-                              title: Text(file.name),
-                              subtitle: Text('${(file.size / 1024).toStringAsFixed(2)} KB'),
-                              trailing: IconButton(
-                                icon: Icon(Icons.clear, color: Colors.red),
-                                onPressed: () => _removeFile(index),
-                              ),
-                            );
-                          }),
-                        ] else ...[
-                          ...List.generate(_selectedFiles.length, (index) {
-                            final file = _selectedFiles[index];
-                            final extension = path.extension(file.path).replaceAll('.', '');
-
-                            return ListTile(
-                              leading: Text(_getFileIcon(extension),
-                                  style: TextStyle(fontSize: 24)),
-                              title: Text(path.basename(file.path)),
-                              subtitle: Text('${(file.lengthSync() / 1024).toStringAsFixed(2)} KB'),
-                              trailing: IconButton(
-                                icon: Icon(Icons.clear, color: Colors.red),
-                                onPressed: () => _removeFile(index),
-                              ),
-                            );
-                          }),
-                        ],
-                      ],
-
-                      SizedBox(height: 32),
-
-                      // Submit Button
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _submitForm,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 48, vertical: 12),
-                          ),
-                          child: Text(
-                            localization.translate('create_tender'),
-                            style: TextStyle(fontSize: 16),
-                          ),
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: isDesktop ? 1200 : double.infinity),
+                    child: Card(
+                      elevation: isDesktop ? 4 : 1,
+                      child: Padding(
+                        padding: EdgeInsets.all(isDesktop ? 32 : 16),
+                        child: Form(
+                          key: _formKey,
+                          child: _buildFormContent(context, isDesktop),
                         ),
                       ),
-                      SizedBox(height: 24),
-                    ],
+                    ),
                   ),
                 ),
               ),

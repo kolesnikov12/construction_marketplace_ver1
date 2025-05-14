@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:construction_marketplace/providers/auth_provider.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
+import 'package:construction_marketplace/utils/responsive_helper.dart';
+import 'package:construction_marketplace/utils/responsive_builder.dart';
 
 import '../../utils/validators.dart';
+import '../../utils/responsive_builder.dart';
 
 class RegisterScreen extends StatefulWidget {
   static const routeName = '/register';
@@ -96,6 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
+    final isDesktop = ResponsiveHelper.isDesktop(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -105,167 +109,288 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: SingleChildScrollView(
           child: Container(
             padding: EdgeInsets.all(16),
-            width: 400,
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: localization.translate('name'),
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person),
-                    ),
-                    textInputAction: TextInputAction.next,
-                    validator: (value) => Validators.validateName(value),
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: localization.translate('email'),
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email),
-                      hintText: 'example@email.com',
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    validator: (value) => Validators.validateEmail(value),
-                    autocorrect: false,
-                    enableSuggestions: false,
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: _phoneController,
-                    decoration: InputDecoration(
-                      labelText: localization.translate('phone'),
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.phone),
-                      hintText: '(123) 456-7890',
-                    ),
-                    keyboardType: TextInputType.phone,
-                    textInputAction: TextInputAction.next,
-                    validator: (value) => Validators.validatePhone(value),
-                    // Додаємо маску для телефонного номера через пакет mask_text_input_formatter
-                    inputFormatters: const [
-                      // MaskTextInputFormatter(
-                      //   mask: '(###) ###-####',
-                      //   filter: {"#": RegExp(r'[0-9]')},
-                      // ),
-                    ],
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: localization.translate('password'),
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-                    obscureText: _obscurePassword,
-                    textInputAction: TextInputAction.next,
-                    validator: (value) => Validators.validatePassword(value),
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    decoration: InputDecoration(
-                      labelText: localization.translate('confirm_password'),
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscureConfirmPassword = !_obscureConfirmPassword;
-                          });
-                        },
-                      ),
-                    ),
-                    obscureText: _obscureConfirmPassword,
-                    textInputAction: TextInputAction.done,
-                    validator: (value) => Validators.validateConfirmPassword(
-                      value,
-                      _passwordController.text,
-                    ),
-                    onFieldSubmitted: (_) => _submit(),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Додаємо поле для згоди з умовами
-                  Row(
+            width: isDesktop ? 700 : 400, // Much wider for desktop to fit two columns
+            child: Card(
+              elevation: isDesktop ? 4 : 1,
+              child: Padding(
+                padding: EdgeInsets.all(isDesktop ? 32 : 16),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Checkbox(
-                        value: _acceptTerms,
-                        onChanged: (value) {
-                          setState(() {
-                            _acceptTerms = value ?? false;
-                          });
+                      // Registration heading for desktop
+                      if (isDesktop) ...[
+                        Icon(
+                          Icons.account_circle,
+                          size: 64,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          localization.translate('register'),
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 32),
+                      ],
+
+                      // Use ResponsiveRow for desktop layout with multiple columns
+                      ResponsiveBuilder(
+                        builder: (context, isMobile, isTablet, isDesktopView) {
+                          if (isDesktopView) {
+                            // Two-column layout for desktop
+                            return Column(
+                              children: [
+                                // Name and Email in first row
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: _buildNameField(),
+                                    ),
+                                    SizedBox(width: 16),
+                                    Expanded(
+                                      child: _buildEmailField(),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 16),
+
+                                // Phone in second row
+                                _buildPhoneField(),
+                                SizedBox(height: 16),
+
+                                // Password fields in third row
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: _buildPasswordField(),
+                                    ),
+                                    SizedBox(width: 16),
+                                    Expanded(
+                                      child: _buildConfirmPasswordField(),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          } else {
+                            // Single column layout for mobile/tablet
+                            return Column(
+                              children: [
+                                _buildNameField(),
+                                SizedBox(height: 16),
+                                _buildEmailField(),
+                                SizedBox(height: 16),
+                                _buildPhoneField(),
+                                SizedBox(height: 16),
+                                _buildPasswordField(),
+                                SizedBox(height: 16),
+                                _buildConfirmPasswordField(),
+                              ],
+                            );
+                          }
                         },
                       ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _acceptTerms = !_acceptTerms;
-                            });
-                          },
-                          child: Text(
-                            localization.translate('accept_terms_and_privacy'),
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              decoration: TextDecoration.underline,
+
+                      const SizedBox(height: 24),
+
+                      // Terms and conditions
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _acceptTerms,
+                            onChanged: (value) {
+                              setState(() {
+                                _acceptTerms = value ?? false;
+                              });
+                            },
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _acceptTerms = !_acceptTerms;
+                                });
+                              },
+                              child: Text(
+                                localization.translate('accept_terms_and_privacy'),
+                                style: const TextStyle(
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
                             ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Register button
+                      ElevatedButton(
+                        onPressed: _isLoading ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: isDesktop ? 16 : 12),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                            : Text(
+                          localization.translate('register'),
+                          style: TextStyle(
+                            fontSize: isDesktop ? 16 : 14,
                           ),
                         ),
                       ),
+
+                      const SizedBox(height: 16),
+
+                      // Already have account link
+                      isDesktop
+                          ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(localization.translate('already_have_account_prefix')),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text(localization.translate('login_now')),
+                          ),
+                        ],
+                      )
+                          : TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Text(localization.translate('already_have_account')),
+                      ),
+
+                      if (isDesktop)
+                        SizedBox(height: 16),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                        : Text(localization.translate('register')),
-                  ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Text(localization.translate('already_have_account')),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  // Helper methods to build individual form fields
+  Widget _buildNameField() {
+    final localization = AppLocalizations.of(context)!;
+    return TextFormField(
+      controller: _nameController,
+      decoration: InputDecoration(
+        labelText: localization.translate('name'),
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.person),
+      ),
+      textInputAction: TextInputAction.next,
+      validator: (value) => Validators.validateName(value),
+    );
+  }
+
+  Widget _buildEmailField() {
+    final localization = AppLocalizations.of(context)!;
+    return TextFormField(
+      controller: _emailController,
+      decoration: InputDecoration(
+        labelText: localization.translate('email'),
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.email),
+        hintText: 'example@email.com',
+      ),
+      keyboardType: TextInputType.emailAddress,
+      textInputAction: TextInputAction.next,
+      validator: (value) => Validators.validateEmail(value),
+      autocorrect: false,
+      enableSuggestions: false,
+    );
+  }
+
+  Widget _buildPhoneField() {
+    final localization = AppLocalizations.of(context)!;
+    return TextFormField(
+      controller: _phoneController,
+      decoration: InputDecoration(
+        labelText: localization.translate('phone'),
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.phone),
+        hintText: '(123) 456-7890',
+      ),
+      keyboardType: TextInputType.phone,
+      textInputAction: TextInputAction.next,
+      validator: (value) => Validators.validatePhone(value),
+    );
+  }
+
+  Widget _buildPasswordField() {
+    final localization = AppLocalizations.of(context)!;
+    return TextFormField(
+      controller: _passwordController,
+      decoration: InputDecoration(
+        labelText: localization.translate('password'),
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.lock),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscurePassword ? Icons.visibility : Icons.visibility_off,
+          ),
+          onPressed: () {
+            setState(() {
+              _obscurePassword = !_obscurePassword;
+            });
+          },
+        ),
+      ),
+      obscureText: _obscurePassword,
+      textInputAction: TextInputAction.next,
+      validator: (value) => Validators.validatePassword(value),
+    );
+  }
+
+  Widget _buildConfirmPasswordField() {
+    final localization = AppLocalizations.of(context)!;
+    return TextFormField(
+      controller: _confirmPasswordController,
+      decoration: InputDecoration(
+        labelText: localization.translate('confirm_password'),
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.lock),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+          ),
+          onPressed: () {
+            setState(() {
+              _obscureConfirmPassword = !_obscureConfirmPassword;
+            });
+          },
+        ),
+      ),
+      obscureText: _obscureConfirmPassword,
+      textInputAction: TextInputAction.done,
+      validator: (value) => Validators.validateConfirmPassword(
+        value,
+        _passwordController.text,
+      ),
+      onFieldSubmitted: (_) => _submit(),
     );
   }
 }

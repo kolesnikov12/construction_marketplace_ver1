@@ -1,4 +1,3 @@
-// lib/screens/tenders/tender_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -9,6 +8,7 @@ import 'package:construction_marketplace/screens/tenders/tender_detail_screen.da
 import 'package:construction_marketplace/widgets/tenders/tender_list_item.dart';
 import 'package:construction_marketplace/widgets/tenders/filter_dialog.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
+import 'package:construction_marketplace/utils/responsive_helper.dart';
 
 class TenderListScreen extends StatefulWidget {
   static const routeName = '/tenders';
@@ -28,6 +28,7 @@ class _TenderListScreenState extends State<TenderListScreen> {
   String? _selectedCategoryId;
   bool _showUserBids = false;
   bool _showUnviewed = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -44,6 +45,10 @@ class _TenderListScreenState extends State<TenderListScreen> {
   }
 
   Future<void> _loadTenders() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     await Provider.of<TenderProvider>(context, listen: false).fetchTenders(
       searchQuery: widget.searchQuery,
       city: _selectedCity,
@@ -51,6 +56,12 @@ class _TenderListScreenState extends State<TenderListScreen> {
       userBids: _showUserBids,
       unviewed: _showUnviewed,
     );
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _openFilterDialog() async {
@@ -99,17 +110,22 @@ class _TenderListScreenState extends State<TenderListScreen> {
     final localization = AppLocalizations.of(context)!;
     final tenderProvider = Provider.of<TenderProvider>(context);
     final tenders = tenderProvider.tenders;
+    final isLargeScreen = ResponsiveHelper.isLargeScreen(context);
+    final contentPadding = ResponsiveHelper.getContentPadding(context);
 
     return Scaffold(
       appBar: widget.searchQuery.isEmpty ? AppBar(
-        automaticallyImplyLeading: false, // Add this line
+        automaticallyImplyLeading: false,
         title: Text(localization.translate('tenders')),
       ) : null,
       body: Column(
         children: [
           if (_hasActiveFilters)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: EdgeInsets.symmetric(
+                  horizontal: isLargeScreen ? 24.0 : 16.0,
+                  vertical: 8.0
+              ),
               color: Colors.grey[200],
               child: Row(
                 children: [
@@ -195,7 +211,9 @@ class _TenderListScreenState extends State<TenderListScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: _loadTenders,
-              child: tenders.isEmpty
+              child: _isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : tenders.isEmpty
                   ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -216,20 +234,43 @@ class _TenderListScreenState extends State<TenderListScreen> {
                   ],
                 ),
               )
-                  : ListView.builder(
-                itemCount: tenders.length,
-                itemBuilder: (ctx, index) {
-                  final tender = tenders[index];
-                  return TenderListItem(
-                    tender: tender,
-                    onTap: () {
-                      Navigator.of(context).pushNamed(
-                        TenderDetailScreen.routeName,
-                        arguments: tender.id,
-                      );
-                    },
-                  );
-                },
+                  : Padding(
+                padding: contentPadding,
+                child: isLargeScreen
+                // Desktop view - use a more efficient layout
+                    ? ListView.builder(
+                  itemCount: tenders.length,
+                  itemBuilder: (ctx, index) {
+                    final tender = tenders[index];
+                    return TenderListItem(
+                      tender: tender,
+                      isDesktopView: true,
+                      onTap: () {
+                        Navigator.of(context).pushNamed(
+                          TenderDetailScreen.routeName,
+                          arguments: tender.id,
+                        );
+                      },
+                    );
+                  },
+                )
+                // Mobile view - standard list
+                    : ListView.builder(
+                  itemCount: tenders.length,
+                  itemBuilder: (ctx, index) {
+                    final tender = tenders[index];
+                    return TenderListItem(
+                      tender: tender,
+                      isDesktopView: false,
+                      onTap: () {
+                        Navigator.of(context).pushNamed(
+                          TenderDetailScreen.routeName,
+                          arguments: tender.id,
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -243,4 +284,3 @@ class _TenderListScreenState extends State<TenderListScreen> {
     );
   }
 }
-

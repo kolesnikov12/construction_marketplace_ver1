@@ -6,6 +6,8 @@ import 'package:construction_marketplace/screens/tenders/create_tender_screen.da
 import 'package:construction_marketplace/widgets/app_drawer.dart';
 import 'package:construction_marketplace/widgets/tenders/tender_list_item.dart';
 import 'package:construction_marketplace/utils/l10n/app_localizations.dart';
+import 'package:construction_marketplace/utils/responsive_helper.dart';
+import 'package:construction_marketplace/utils/responsive_builder.dart';
 import '../../models/enums.dart';
 import '../../models/tender.dart';
 
@@ -200,7 +202,8 @@ class _MyTendersScreenState extends State<MyTendersScreen> with SingleTickerProv
     }
   }
 
-  Widget _buildTenderList(List<Tender> tenders, TenderStatus status) {
+  Widget _buildTenderList(List<Tender> tenders, TenderStatus status, bool isMobile, bool isTablet) {
+    final localization = AppLocalizations.of(context)!;
     final filteredTenders = tenders.where((tender) => tender.status == status).toList();
 
     if (filteredTenders.isEmpty) {
@@ -222,75 +225,80 @@ class _MyTendersScreenState extends State<MyTendersScreen> with SingleTickerProv
       );
     }
 
-    return ListView.builder(
-      itemCount: filteredTenders.length,
-      itemBuilder: (ctx, index) {
-        final tender = filteredTenders[index];
-        return TenderListItem(
-          tender: tender,
-          onTap: () {
-            Navigator.of(context).pushNamed(
-              TenderDetailScreen.routeName,
-              arguments: tender.id,
-            );
-          },
-          trailingBuilder: (BuildContext context) {
-            return PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert),
-              onSelected: (value) async {
-                switch (value) {
-                  case 'extend':
-                    await _extendTender(tender.id);
-                    break;
-                  case 'close':
-                    await _closeTender(tender.id);
-                    break;
-                  case 'delete':
-                    await _deleteTender(tender.id);
-                    break;
-                }
-              },
-              itemBuilder: (ctx) => [
-                if (tender.status != TenderStatus.closed)
-                  PopupMenuItem(
-                    value: 'extend',
-                    child: Row(
-                      children: [
-                        Icon(Icons.calendar_today),
-                        SizedBox(width: 8),
-                        Text(AppLocalizations.of(context)!.translate('extend')),
-                      ],
-                    ),
-                  ),
-                if (tender.status != TenderStatus.closed)
-                  PopupMenuItem(
-                    value: 'close',
-                    child: Row(
-                      children: [
-                        Icon(Icons.check_circle),
-                        SizedBox(width: 8),
-                        Text(AppLocalizations.of(context)!.translate('mark_as_closed')),
-                      ],
-                    ),
-                  ),
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text(
-                        AppLocalizations.of(context)!.translate('delete'),
-                        style: TextStyle(color: Colors.red),
+    return ResponsiveRow(
+      spacing: 16,
+      mobileColumns: 1,
+      tabletColumns: 2,
+      desktopColumns: 3,
+      children: filteredTenders.map((tender) {
+        return Card(
+          margin: EdgeInsets.zero,
+          child: TenderListItem(
+            tender: tender,
+            onTap: () {
+              Navigator.of(context).pushNamed(
+                TenderDetailScreen.routeName,
+                arguments: tender.id,
+              );
+            },
+            trailingBuilder: (BuildContext context) {
+              return PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert),
+                onSelected: (value) async {
+                  switch (value) {
+                    case 'extend':
+                      await _extendTender(tender.id);
+                      break;
+                    case 'close':
+                      await _closeTender(tender.id);
+                      break;
+                    case 'delete':
+                      await _deleteTender(tender.id);
+                      break;
+                  }
+                },
+                itemBuilder: (ctx) => [
+                  if (tender.status != TenderStatus.closed)
+                    PopupMenuItem(
+                      value: 'extend',
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today),
+                          SizedBox(width: 8),
+                          Text(localization.translate('extend')),
+                        ],
                       ),
-                    ],
+                    ),
+                  if (tender.status != TenderStatus.closed)
+                    PopupMenuItem(
+                      value: 'close',
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle),
+                          SizedBox(width: 8),
+                          Text(localization.translate('mark_as_closed')),
+                        ],
+                      ),
+                    ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text(
+                          localization.translate('delete'),
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         );
-      },
+      }).toList(),
     );
   }
 
@@ -300,39 +308,68 @@ class _MyTendersScreenState extends State<MyTendersScreen> with SingleTickerProv
     final tenderProvider = Provider.of<TenderProvider>(context);
     final userTenders = tenderProvider.userTenders;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(localization.translate('my_tenders')),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: localization.translate('open')),
-            Tab(text: localization.translate('extended')),
-            Tab(text: localization.translate('closed')),
-          ],
-        ),
-      ),
-      drawer: AppDrawer(),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-        onRefresh: _loadUserTenders,
-        child: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildTenderList(userTenders, TenderStatus.open),
-            _buildTenderList(userTenders, TenderStatus.extended),
-            _buildTenderList(userTenders, TenderStatus.closed),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).pushNamed(CreateTenderScreen.routeName);
-        },
-        child: Icon(Icons.add),
-        tooltip: localization.translate('create_tender'),
-      ),
+    return ResponsiveBuilder(
+      builder: (context, isMobile, isTablet, isDesktop) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(localization.translate('my_tenders')),
+            bottom: TabBar(
+              controller: _tabController,
+              tabs: [
+                Tab(text: localization.translate('open')),
+                Tab(text: localization.translate('extended')),
+                Tab(text: localization.translate('closed')),
+              ],
+            ),
+          ),
+          drawer: isMobile ? AppDrawer() : null,
+          body: Row(
+            children: [
+              // Show drawer as sidebar on tablet and desktop
+              if (!isMobile)
+                SizedBox(
+                  width: 250,
+                  child: AppDrawer(),
+                ),
+
+              // Main content
+              Expanded(
+                child: _isLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : RefreshIndicator(
+                  onRefresh: _loadUserTenders,
+                  child: Padding(
+                    padding: EdgeInsets.all(
+                      ResponsiveHelper.getScreenPadding(context).left,
+                    ),
+                    child: Container(
+                      width: double.infinity,
+                      constraints: BoxConstraints(
+                        maxWidth: ResponsiveHelper.getContentMaxWidth(context),
+                      ),
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildTenderList(userTenders, TenderStatus.open, isMobile, isTablet),
+                          _buildTenderList(userTenders, TenderStatus.extended, isMobile, isTablet),
+                          _buildTenderList(userTenders, TenderStatus.closed, isMobile, isTablet),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.of(context).pushNamed(CreateTenderScreen.routeName);
+            },
+            child: Icon(Icons.add),
+            tooltip: localization.translate('create_tender'),
+          ),
+        );
+      },
     );
   }
 }
