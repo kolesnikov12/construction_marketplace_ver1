@@ -6,6 +6,7 @@ import 'dart:js_interop';
 import 'package:construction_marketplace/providers/auth_provider.dart';
 import 'package:construction_marketplace/widgets/app_drawer.dart';
 import 'package:construction_marketplace/utils/responsive_helper.dart';
+import 'package:construction_marketplace/utils/responsive_builder.dart';
 import '../../utils/l10n/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -186,146 +187,164 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
     final user = Provider.of<AuthProvider>(context).user;
-    final isDesktop = ResponsiveHelper.isDesktop(context);
 
-    if (user == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(localization.translate('profile')),
-        ),
-        body: Center(
-          child: Text(localization.translate('not_logged_in')),
-        ),
-      );
-    }
+    return ResponsiveBuilder(
+      builder: (context, isMobile, isTablet, isDesktop) {
+        if (user == null) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(localization.translate('profile')),
+            ),
+            body: Center(
+              child: Text(localization.translate('not_logged_in')),
+            ),
+          );
+        }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(localization.translate('profile')),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: localization.translate('profile_info')),
-            Tab(text: localization.translate('change_password')),
-          ],
-        ),
-      ),
-      drawer: AppDrawer(),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Profile Info Tab
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child: Container(
-                constraints: BoxConstraints(maxWidth: isDesktop ? 800 : double.infinity),
-                child: isDesktop
-                    ? _buildDesktopProfileContent(user, localization)
-                    : _buildMobileProfileContent(user, localization),
-              ),
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(localization.translate('profile')),
+            bottom: TabBar(
+              controller: _tabController,
+              tabs: [
+                Tab(text: localization.translate('profile_info')),
+                Tab(text: localization.translate('change_password')),
+              ],
             ),
           ),
+          drawer: isMobile ? AppDrawer() : null,
+          body: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Side navigation for desktop
+              if (!isMobile)
+                SizedBox(
+                  width: 250,
+                  child: AppDrawer(),
+                ),
 
-          // Change Password Tab
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child: Container(
-                constraints: BoxConstraints(maxWidth: isDesktop ? 600 : double.infinity),
-                child: Card(
-                  elevation: isDesktop ? 4 : 1,
-                  child: Padding(
-                    padding: EdgeInsets.all(isDesktop ? 32 : 16),
-                    child: Form(
-                      key: _passwordFormKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (isDesktop) ...[
-                            Text(
-                              localization.translate('change_password'),
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 24),
-                          ],
-
-                          TextFormField(
-                            controller: _currentPasswordController,
-                            decoration: InputDecoration(
-                              labelText: localization.translate('current_password'),
-                              border: OutlineInputBorder(),
-                            ),
-                            obscureText: true,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return localization.translate('field_required');
-                              }
-                              return null;
-                            },
-                          ),
-                          SizedBox(height: 16),
-                          TextFormField(
-                            controller: _newPasswordController,
-                            decoration: InputDecoration(
-                              labelText: localization.translate('new_password'),
-                              border: OutlineInputBorder(),
-                            ),
-                            obscureText: true,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return localization.translate('field_required');
-                              }
-                              if (value.length < 6) {
-                                return localization.translate('password_short');
-                              }
-                              return null;
-                            },
-                          ),
-                          SizedBox(height: 16),
-                          TextFormField(
-                            controller: _confirmPasswordController,
-                            decoration: InputDecoration(
-                              labelText: localization.translate('confirm_password'),
-                              border: OutlineInputBorder(),
-                            ),
-                            obscureText: true,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return localization.translate('field_required');
-                              }
-                              if (value != _newPasswordController.text) {
-                                return localization.translate('passwords_dont_match');
-                              }
-                              return null;
-                            },
-                          ),
-                          SizedBox(height: 24),
-                          Center(
-                            child: ElevatedButton(
-                              onPressed: _isPasswordChanging ? null : _changePassword,
-                              child: _isPasswordChanging
-                                  ? CircularProgressIndicator(color: Colors.white)
-                                  : Text(localization.translate('change_password')),
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: Size(isDesktop ? 200 : double.infinity, 48),
-                                padding: EdgeInsets.symmetric(horizontal: 24),
-                              ),
-                            ),
-                          ),
-                        ],
+              // Main content
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // Profile Info Tab
+                    SingleChildScrollView(
+                      padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
+                      child: Center(
+                        child: Container(
+                          constraints: BoxConstraints(maxWidth: isDesktop ? 1000 : double.infinity),
+                          child: isDesktop
+                              ? _buildDesktopProfileContent(user, localization)
+                              : _buildMobileProfileContent(user, localization),
+                        ),
                       ),
                     ),
-                  ),
+
+                    // Change Password Tab
+                    SingleChildScrollView(
+                      padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
+                      child: Center(
+                        child: Container(
+                          constraints: BoxConstraints(maxWidth: isDesktop ? 600 : double.infinity),
+                          child: Card(
+                            elevation: isDesktop ? 4 : 1,
+                            child: Padding(
+                              padding: EdgeInsets.all(isDesktop ? 32 : 16),
+                              child: Form(
+                                key: _passwordFormKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (isDesktop) ...[
+                                      Text(
+                                        localization.translate('change_password'),
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 24),
+                                    ],
+
+                                    TextFormField(
+                                      controller: _currentPasswordController,
+                                      decoration: InputDecoration(
+                                        labelText: localization.translate('current_password'),
+                                        border: OutlineInputBorder(),
+                                      ),
+                                      obscureText: true,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return localization.translate('field_required');
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _newPasswordController,
+                                      decoration: InputDecoration(
+                                        labelText: localization.translate('new_password'),
+                                        border: OutlineInputBorder(),
+                                      ),
+                                      obscureText: true,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return localization.translate('field_required');
+                                        }
+                                        if (value.length < 6) {
+                                          return localization.translate('password_short');
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _confirmPasswordController,
+                                      decoration: InputDecoration(
+                                        labelText: localization.translate('confirm_password'),
+                                        border: OutlineInputBorder(),
+                                      ),
+                                      obscureText: true,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return localization.translate('field_required');
+                                        }
+                                        if (value != _newPasswordController.text) {
+                                          return localization.translate('passwords_dont_match');
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    SizedBox(height: 24),
+                                    Center(
+                                      child: ElevatedButton(
+                                        onPressed: _isPasswordChanging ? null : _changePassword,
+                                        child: _isPasswordChanging
+                                            ? CircularProgressIndicator(color: Colors.white)
+                                            : Text(localization.translate('change_password')),
+                                        style: ElevatedButton.styleFrom(
+                                          minimumSize: Size(isDesktop ? 200 : double.infinity, 48),
+                                          padding: EdgeInsets.symmetric(horizontal: 24),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -334,7 +353,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Left column with profile image
+        // Left column with profile image and details
         Expanded(
           flex: 1,
           child: Card(
@@ -342,6 +361,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   GestureDetector(
                     onTap: _pickImage,
@@ -382,6 +402,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 8),
                   Text(
@@ -389,6 +410,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     style: TextStyle(
                       color: Colors.grey[600],
                     ),
+                    textAlign: TextAlign.center,
                   ),
                   if (user.isEmailVerified) ...[
                     SizedBox(height: 8),
@@ -399,12 +421,22 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     ),
                   ],
                   SizedBox(height: 24),
-                  Text(
-                    localization.translate('account_since'),
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                    ),
+                  Divider(),
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                      SizedBox(width: 8),
+                      Text(
+                        localization.translate('account_since'),
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
+                  SizedBox(height: 4),
                   Text(
                     user.createdAt.toString().substring(0, 10),
                     style: TextStyle(
@@ -438,19 +470,48 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     ),
                     SizedBox(height: 24),
 
-                    // Name field
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: localization.translate('name'),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return localization.translate('field_required');
-                        }
-                        return null;
-                      },
+                    // Name and phone in one row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Name field
+                        Expanded(
+                          child: TextFormField(
+                            controller: _nameController,
+                            decoration: InputDecoration(
+                              labelText: localization.translate('name'),
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.person),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return localization.translate('field_required');
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        SizedBox(width: 16),
+
+                        // Phone field
+                        Expanded(
+                          child: TextFormField(
+                            controller: _phoneController,
+                            decoration: InputDecoration(
+                              labelText: localization.translate('phone'),
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.phone),
+                            ),
+                            keyboardType: TextInputType.phone,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return localization.translate('field_required');
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 16),
 
@@ -460,26 +521,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       decoration: InputDecoration(
                         labelText: localization.translate('email'),
                         border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.email),
                         hintText: user.email,
                       ),
                       enabled: false,
-                    ),
-                    SizedBox(height: 16),
-
-                    // Phone field
-                    TextFormField(
-                      controller: _phoneController,
-                      decoration: InputDecoration(
-                        labelText: localization.translate('phone'),
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.phone,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return localization.translate('field_required');
-                        }
-                        return null;
-                      },
                     ),
                     SizedBox(height: 32),
 
@@ -488,7 +533,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _updateProfile,
                         child: _isLoading
-                            ? CircularProgressIndicator(color: Colors.white)
+                            ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
                             : Text(localization.translate('update_profile')),
                         style: ElevatedButton.styleFrom(
                           minimumSize: Size(200, 48),
@@ -514,78 +566,112 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         Center(
           child: GestureDetector(
             onTap: _pickImage,
-            child: CircleAvatar(
-              radius: 60,
-              backgroundColor: Colors.grey.shade200,
-              backgroundImage: _profileImageBytes != null
-                  ? MemoryImage(_profileImageBytes!) as ImageProvider
-                  : (user.profileImageUrl != null
-                  ? NetworkImage(user.profileImageUrl!) as ImageProvider
-                  : null),
-              child: _profileImageBytes == null && user.profileImageUrl == null
-                  ? Icon(Icons.person, size: 60, color: Colors.grey)
-                  : null,
+            child: Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.grey.shade200,
+                  backgroundImage: _profileImageBytes != null
+                      ? MemoryImage(_profileImageBytes!) as ImageProvider
+                      : (user.profileImageUrl != null
+                      ? NetworkImage(user.profileImageUrl!) as ImageProvider
+                      : null),
+                  child: _profileImageBytes == null && user.profileImageUrl == null
+                      ? Icon(Icons.person, size: 60, color: Colors.grey)
+                      : null,
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  padding: EdgeInsets.all(6),
+                  child: Icon(
+                    Icons.camera_alt,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
+        SizedBox(height: 8),
         TextButton.icon(
           onPressed: _pickImage,
           icon: Icon(Icons.photo_camera),
           label: Text(localization.translate('change_photo')),
         ),
         SizedBox(height: 16),
-        Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: localization.translate('name'),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return localization.translate('field_required');
-                  }
-                  return null;
-                },
+        Card(
+          elevation: 1,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: localization.translate('name'),
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.person),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return localization.translate('field_required');
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: localization.translate('email'),
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.email),
+                    ),
+                    enabled: false,
+                  ),
+                  SizedBox(height: 16),
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: InputDecoration(
+                      labelText: localization.translate('phone'),
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.phone),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return localization.translate('field_required');
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _updateProfile,
+                    child: _isLoading
+                        ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                        : Text(localization.translate('update_profile')),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(double.infinity, 48),
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: localization.translate('email'),
-                  border: OutlineInputBorder(),
-                ),
-                enabled: false,
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _phoneController,
-                decoration: InputDecoration(
-                  labelText: localization.translate('phone'),
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return localization.translate('field_required');
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _updateProfile,
-                child: _isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text(localization.translate('update_profile')),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 48),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ],
