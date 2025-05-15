@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:construction_marketplace/screens/tenders/tender_list_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -769,7 +770,7 @@ class _CreateTenderScreenState extends State<CreateTenderScreen> {
             if (state is TenderCreatedState) {
               // Navigate back on successful creation with a result to trigger refresh
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                Navigator.of(context).pop(true); // Return true to indicate successful creation
+                Navigator.of(context).pushReplacementNamed(TenderListScreen.routeName);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(localization.translate('tender_created_successfully')),
@@ -789,7 +790,7 @@ class _CreateTenderScreenState extends State<CreateTenderScreen> {
           }
 
           return _isLoading
-              ? Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator())
               : GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
             child: Container(

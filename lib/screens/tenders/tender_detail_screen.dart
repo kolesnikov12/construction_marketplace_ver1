@@ -188,7 +188,7 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
   }
 
   // Check server response and content type
-  Future<bool> _checkImageUrl(String url) async {
+  Future <bool> _checkImageUrl(String url) async {
     try {
       final processedUrl = url.contains('?alt=media')
           ? url
@@ -235,77 +235,50 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
           height: 220,
           child: GridView.builder(
             shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 5,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
               childAspectRatio: 1,
             ),
-            itemCount: _tender!.attachmentUrls!.length > 10 ? 10 : _tender!.attachmentUrls!.length,
+            itemCount: _tender!.attachmentUrls!.length > 10
+                ? 10
+                : _tender!.attachmentUrls!.length,
             itemBuilder: (ctx, index) {
               final url = _tender!.attachmentUrls![index];
-              // Додаємо ?alt=media, якщо його немає
               final processedUrl = url.contains('?alt=media')
                   ? url
                   : '${url.split('?')[0]}?alt=media';
               _logDebug('Processing image URL: $processedUrl');
 
-              return FutureBuilder<bool>(
-                future: _checkImageUrl(processedUrl),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  }
-
-                  final isValidImage = snapshot.data ?? false;
-                  final error = snapshot.error;
-
-                  return GestureDetector(
-                    onTap: () => _openAttachment(processedUrl),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[300]!),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: isValidImage
-                          ? Image.network(
-                        processedUrl,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) {
-                            _logDebug('Image loaded successfully');
-                            return child;
-                          }
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          _logDebug('Error loading image: $error');
-                          return Container(
-                            color: Colors.grey[200],
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.broken_image, size: 36, color: Colors.red),
-                                SizedBox(height: 8),
-                                Text(
-                                  AppLocalizations.of(context)!.translate('could_not_load_image'),
-                                  style: TextStyle(fontSize: 12),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      )
-                          : Container(
+              return GestureDetector(
+                onTap: () => _openAttachment(processedUrl),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Image.network(
+                    processedUrl,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) {
+                        _logDebug('Image loaded successfully');
+                        return child;
+                      }
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      _logDebug('Error loading image: $error');
+                      return Container(
                         color: Colors.grey[200],
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -313,16 +286,17 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
                             Icon(Icons.broken_image, size: 36, color: Colors.red),
                             SizedBox(height: 8),
                             Text(
-                              AppLocalizations.of(context)!.translate('could_not_load_image'),
+                              AppLocalizations.of(context)!
+                                  .translate('could_not_load_image'),
                               style: TextStyle(fontSize: 12),
                               textAlign: TextAlign.center,
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                  );
-                },
+                      );
+                    },
+                  ),
+                ),
               );
             },
           ),
@@ -330,6 +304,7 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
       ],
     );
   }
+
 
   Future<void> _openAttachment(String url) async {
     final localization = AppLocalizations.of(context)!;
@@ -1121,7 +1096,7 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
                             children: [
                               Text(
                                 item.itemName,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),
@@ -1129,7 +1104,7 @@ class _TenderDetailScreenState extends State<TenderDetailScreen> {
                               SizedBox(height: 8),
                               Row(
                                 children: [
-                                  Icon(Icons.category,
+                                  const Icon(Icons.category,
                                       size: 14, color: Colors.grey),
                                   SizedBox(width: 4),
                                   Text(

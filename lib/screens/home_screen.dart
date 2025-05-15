@@ -147,11 +147,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           controller: _tabController,
           tabs: [
             Tab(
-              icon: Icon(Icons.description),
+              icon: const Icon(Icons.description),
               text: localization.translate('tenders'),
             ),
             Tab(
-              icon: Icon(Icons.store),
+              icon: const Icon(Icons.store),
               text: localization.translate('listings'),
             ),
           ],

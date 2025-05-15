@@ -281,13 +281,6 @@ class TenderRepository {
         updatedImageUrls.removeWhere((url) => imagesToDelete.contains(url));
       }
 
-      // Add new images if provided
-      if (newImages != null && newImages.isNotEmpty) {
-        final newImageUrls =
-            await _uploadImages(newImages, existingTender.userId);
-        updatedImageUrls.addAll(newImageUrls);
-      }
-
       // Update tender object
       final tender = Tender(
         id: id,
@@ -536,114 +529,7 @@ class TenderRepository {
     }
   }
 
-  // Upload images specific for Image.network usage
-  Future<List<String>> _uploadImages(
-      List<dynamic> images, String userId) async {
-    List<String> urls = [];
-    final ref = _storage.ref().child('tenders/$userId/images/');
-    final user = FirebaseAuth.instance.currentUser;
 
-    if (user == null || user.uid != userId) {
-      print('User not authenticated or userId mismatch for $userId');
-      throw Exception('User not authenticated or userId mismatch');
-    }
-
-    print(
-        'Starting upload of ${images.length} images to tenders/$userId/images/');
-
-    if (images.isEmpty) {
-      print('No images provided for upload');
-      return urls;
-    }
-
-    for (var image in images) {
-      try {
-        String fileName;
-        if (kIsWeb && image is PlatformFile) {
-          fileName = '${_uuid.v4()}_${image.name}';
-          final fileRef = ref.child(fileName);
-          print('Attempting to upload image: $fileName');
-
-          if (_isImageFile(image.name)) {
-            final metadata = SettableMetadata(
-              contentType: _getContentType(image.name),
-              customMetadata: {'userId': userId},
-            );
-
-            final task = fileRef.putData(image.bytes!, metadata);
-            await task.whenComplete(() => null);
-            final url = await fileRef.getDownloadURL();
-            print('Generated URL: $url');
-
-            // Використовуємо базовий URL без токена
-            final cleanUrl = url.split('?token=')[0];
-            print('Clean URL without token: $cleanUrl');
-            urls.add(cleanUrl);
-          } else {
-            print('File is not an image: ${image.name}');
-            continue;
-          }
-        } else {
-          // Mobile platform handling
-          if (image is io.File) {
-            fileName = '${_uuid.v4()}_${image.path.split('/').last}';
-            final fileRef = ref.child(fileName);
-
-            // Check if it's an image by extension
-            if (_isImageFile(image.path)) {
-              try {
-                final metadata = SettableMetadata(
-                  contentType: _getContentType(image.path),
-                  customMetadata: {'userId': userId},
-                );
-
-                final task = fileRef.putFile(image, metadata);
-                await task.whenComplete(() => null);
-                final url = await fileRef.getDownloadURL();
-                urls.add(url);
-              } catch (e) {
-                print('Error in mobile upload of File image: $e');
-                continue;
-              }
-            } else {
-              print('File is not an image: ${image.path}');
-              continue;
-            }
-          } else if (image is XFile) {
-            // Handle XFile from image_picker
-            fileName = '${_uuid.v4()}_${image.name}';
-            final fileRef = ref.child(fileName);
-
-            try {
-              final file = io.File(image.path);
-              final metadata = SettableMetadata(
-                contentType: image.mimeType ?? _getContentType(image.name),
-                customMetadata: {'userId': userId},
-              );
-
-              final task = fileRef.putFile(file, metadata);
-              await task.whenComplete(() => null);
-              final url = await fileRef.getDownloadURL();
-              urls.add(url);
-            } catch (e) {
-              print('Error in mobile upload of XFile image: $e');
-              continue;
-            }
-          } else {
-            print(
-                'Unsupported image type for mobile platform: ${image.runtimeType}');
-            continue;
-          }
-        }
-      } catch (e, stackTrace) {
-        print('Error uploading image ${image.name}: $e');
-        print('Stack trace: $stackTrace');
-        continue;
-      }
-    }
-    print('Completed upload with ${urls.length} URLs: $urls');
-    return urls;
-  }
 
   // Delete images from Storage
   Future<void> _deleteImages(List<String> urls) async {
@@ -659,38 +545,8 @@ class TenderRepository {
     }
   }
 
-  // Helper method to check if a file is an image based on its extension
-  bool _isImageFile(String path) {
-    final extension = path.split('.').last.toLowerCase();
-    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg']
-        .contains(extension);
-  }
-
-  // Helper method to get content type based on file extension
-  String _getContentType(String path) {
-    final extension = path.split('.').last.toLowerCase();
-    switch (extension) {
-      case 'jpg':
-      case 'jpeg':
-        return 'image/jpeg';
-      case 'png':
-        return 'image/png';
-      case 'gif':
-        return 'image/gif';
-      case 'webp':
-        return 'image/webp';
-      case 'bmp':
-        return 'image/bmp';
-      case 'svg':
-        return 'image/svg+xml';
-      default:
-        return 'application/octet-stream';
-    }
-  }
-
-  Future<List<String>> _uploadAttachments(
-      List<dynamic> attachments, String userId) async {
-    List<String> urls = [];
+  Future<List<String>> _uploadAttachments(List<dynamic> attachments, String userId) async {
+    final urls = <String>[];
     final user = FirebaseAuth.instance.currentUser;
     if (user == null || user.uid != userId) {
       throw Exception('User not authenticated or userId mismatch');
@@ -702,74 +558,76 @@ class TenderRepository {
     for (var attachment in attachments) {
       try {
         String fileName;
+
         if (kIsWeb && attachment is PlatformFile) {
+          if (attachment.bytes == null) {
+            print('Skipping file ${attachment.name} because bytes are null');
+            continue;
+          }
+
           fileName = '${_uuid.v4()}_${attachment.name}';
           final fileRef = ref.child(fileName);
-          print('Attempting to upload attachment: $fileName');
 
           final metadata = SettableMetadata(
             contentType: _getMimeType(attachment.name),
             customMetadata: {'userId': userId},
           );
+
+          print('Uploading (putData): $fileName, size: ${attachment.bytes!.lengthInBytes} bytes');
+
           final task = fileRef.putData(attachment.bytes!, metadata);
+
+          task.snapshotEvents.listen((event) {
+            print('Upload progress: ${event.bytesTransferred} / ${event.totalBytes}');
+          });
+
           await task.whenComplete(() => null);
           final url = await fileRef.getDownloadURL();
           print('Generated URL: $url');
-
-          // Зберігаємо URL з ?alt=media, але без токена
-          final cleanUrl = url.replaceFirst(
-              RegExp(r'\?alt=media&token=[^&]+'), '?alt=media');
-          print('Clean URL with alt=media: $cleanUrl');
-          urls.add(cleanUrl);
-        } else {
-          // Обробка для інших платформ
-          if (attachment is io.File) {
-            fileName = '${_uuid.v4()}_${attachment.path.split('/').last}';
-            final fileRef = ref.child(fileName);
-
-            final metadata = SettableMetadata(
-              contentType: _getMimeType(attachment.path),
-              customMetadata: {'userId': userId},
-            );
-            final task = fileRef.putFile(attachment, metadata);
-            await task.whenComplete(() => null);
-            final url = await fileRef.getDownloadURL();
-            print('Generated URL: $url');
-
-            // Зберігаємо URL з ?alt=media, але без токена
-            final cleanUrl = url.replaceFirst(
-                RegExp(r'\?alt=media&token=[^&]+'), '?alt=media');
-            print('Clean URL with alt=media: $cleanUrl');
-            urls.add(cleanUrl);
-          } else if (attachment is XFile) {
-            fileName = '${_uuid.v4()}_${attachment.name}';
-            final fileRef = ref.child(fileName);
-
-            final file = io.File(attachment.path);
-            final metadata = SettableMetadata(
-              contentType: attachment.mimeType ?? _getMimeType(attachment.name),
-              customMetadata: {'userId': userId},
-            );
-            final task = fileRef.putFile(file, metadata);
-            await task.whenComplete(() => null);
-            final url = await fileRef.getDownloadURL();
-            print('Generated URL: $url');
-
-            // Зберігаємо URL з ?alt=media, але без токена
-            final cleanUrl = url.replaceFirst(
-                RegExp(r'\?alt=media&token=[^&]+'), '?alt=media');
-            print('Clean URL with alt=media: $cleanUrl');
-            urls.add(cleanUrl);
-          } else {
-            print(
-                'Unsupported file type for mobile platform: ${attachment.runtimeType}');
-            continue;
-          }
+          urls.add(url);
         }
-      } catch (e, stackTrace) {
-        print('Error uploading attachment ${attachment.name}: $e');
-        print('Stack trace: $stackTrace');
-        continue;
+
+        // MOBILE platforms
+        else if (attachment is io.File) {
+          fileName = '${_uuid.v4()}_${attachment.path.split('/').last}';
+          final fileRef = ref.child(fileName);
+
+          final metadata = SettableMetadata(
+            contentType: _getMimeType(attachment.path),
+            customMetadata: {'userId': userId},
+          );
+
+          final task = fileRef.putFile(attachment, metadata);
+          await task.whenComplete(() => null);
+          final url = await fileRef.getDownloadURL();
+          print('Generated URL: $url');
+          urls.add(url);
+        }
+
+        else if (attachment is XFile) {
+          fileName = '${_uuid.v4()}_${attachment.name}';
+          final fileRef = ref.child(fileName);
+
+          final file = io.File(attachment.path);
+          final metadata = SettableMetadata(
+            contentType: attachment.mimeType ?? _getMimeType(attachment.name),
+            customMetadata: {'userId': userId},
+          );
+
+          final task = fileRef.putFile(file, metadata);
+          await task.whenComplete(() => null);
+          final url = await fileRef.getDownloadURL();
+          print('Generated URL: $url');
+          urls.add(url);
+        }
+
+        else {
+          print('Unsupported attachment type: ${attachment.runtimeType}');
+          continue;
+        }
+      } catch (e, st) {
+        print('Error uploading attachment: $e');
+        print('Stack trace: $st');
       }
     }
 
